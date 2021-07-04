@@ -525,16 +525,14 @@ void session_t::get_price_handler(string_request_t const &request,
       if (auto const find_iter = tokens.find(token_name);
           find_iter != tokens.cend()) {
         auto const &data = find_iter->second;
-        auto const open_24h = find_iter->second.open_24h;
-        auto const current_mkt_price = find_iter->second.current_price;
-        auto const price_change =
-            ((current_mkt_price - open_24h) / open_24h) * 100.0;
-
+        auto const change =
+            ((data.current_price - data.open_24h) / data.open_24h) * 100.0;
+        
         json::object_t item;
-        item["name"] = find_iter->second.instrument_id;
-        item["price"] = current_mkt_price;
-        item["open_24h"] = open_24h;
-        item["change"] = price_change;
+        item["name"] = data.instrument_id;
+        item["price"] = data.current_price;
+        item["open_24h"] = data.open_24h;
+        item["change"] = change;
         result.push_back(std::move(item));
       }
     }

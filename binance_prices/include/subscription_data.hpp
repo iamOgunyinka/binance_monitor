@@ -87,4 +87,4 @@ std::string task_state_to_string(task_state_e const);
 std::string direction_to_string(trade_direction_e const);
 trade_direction_e string_to_direction(std::string const &);
 
-} // namespace okex
+} // namespace binance

@@ -278,7 +278,6 @@ void public_channel_websocket_t::process_pushed_tickers_data(
   pushed_subscription_data_t data{};
   for (auto const &data_json : data_list) {
     auto const data_object = data_json.get<json::object_t>();
-
     // symbol => BTC-DOGE
     data.instrument_id = data_object.at("s").get<json::string_t>();
     data.current_price = std::stod(data_object.at("c").get<json::string_t>());

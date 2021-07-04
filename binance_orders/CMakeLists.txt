@@ -22,13 +22,9 @@ include_directories(${PROJECT_DIR}/../third-party)
 include_directories(${PROJECT_DIR}/../third-party/CLI11/include)
 include_directories(${PROJECT_DIR}/../third-party/json/single_include)
 include_directories(${PROJECT_DIR}/../third-party/spdlog/include)
-include_directories(${PROJECT_DIR}/../third-party/miniz-cpp)
-include_directories(${PROJECT_DIR}/../third-party/cpp-jwt/include)
 
 link_directories(/usr/lib)
-
-link_libraries(stdc++fs)
-link_libraries(pthread ssl crypto odbc z stdc++fs)
+link_libraries(pthread ssl crypto odbc stdc++fs)
 
 # Outputs
 set(OUTPUT_DEBUG ${PROJECT_DIR}/bin)
