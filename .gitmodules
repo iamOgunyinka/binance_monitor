@@ -1,0 +1,12 @@
+[submodule "third-party/spdlog"]
+	path = third-party/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "third-party/cpp-jwt"]
+	path = third-party/cpp-jwt
+	url = https://github.com/arun11299/cpp-jwt.git
+[submodule "third-party/json"]
+	path = third-party/json
+	url = https://github.com/nlohmann/json
+[submodule "third-party/CLI11"]
+	path = third-party/CLI11
+	url = https://github.com/CLIUtils/CLI11

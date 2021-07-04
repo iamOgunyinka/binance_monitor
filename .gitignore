@@ -34,7 +34,3 @@
 .vs/
 x64/
 config/
-third-party/CLI11/
-third-party/cpp-jwt/
-third-party/json/
-third-party/spdlog/
