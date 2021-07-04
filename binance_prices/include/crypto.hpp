@@ -21,4 +21,4 @@ std::basic_string<unsigned char> hmac256_encode(std::string const &data,
                                                 std::string const &key);
 } // namespace utilities
 
-} // namespace okex
+} // namespace binance

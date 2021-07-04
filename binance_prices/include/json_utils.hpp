@@ -33,4 +33,4 @@ read_object_json_file(std::string const &filename);
 
 std::optional<json::array_t> read_array_json_file(std::string const &filename);
 
-} // namespace okex
+} // namespace binance

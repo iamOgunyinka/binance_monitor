@@ -97,14 +97,13 @@ void public_channel_websocket_t::rest_api_prepare_request() {
 void public_channel_websocket_t::rest_api_send_request() {
   beast::get_lowest_layer(*ssl_web_stream_)
       .expires_after(std::chrono::seconds(20));
-  http::async_write(
-      ssl_web_stream_->next_layer(), *http_request_,
-      [this](beast::error_code const ec, std::size_t const) {
-        if (ec) {
-          return spdlog::error(ec.message());
-        }
-        rest_api_receive_response();
-      });
+  http::async_write(ssl_web_stream_->next_layer(), *http_request_,
+                    [this](beast::error_code const ec, std::size_t const) {
+                      if (ec) {
+                        return spdlog::error(ec.message());
+                      }
+                      rest_api_receive_response();
+                    });
 }
 
 void public_channel_websocket_t::rest_api_receive_response() {
@@ -114,11 +113,10 @@ void public_channel_websocket_t::rest_api_receive_response() {
 
   beast::get_lowest_layer(*ssl_web_stream_)
       .expires_after(std::chrono::seconds(20));
-  http::async_read(ssl_web_stream_->next_layer(), *buffer_,
-                          *http_response_,
-                          [this](beast::error_code ec, std::size_t const sz) {
-                            rest_api_on_data_received(ec);
-                          });
+  http::async_read(ssl_web_stream_->next_layer(), *buffer_, *http_response_,
+                   [this](beast::error_code ec, std::size_t const sz) {
+                     rest_api_on_data_received(ec);
+                   });
 }
 
 void public_channel_websocket_t::rest_api_on_data_received(
@@ -192,7 +190,7 @@ void public_channel_websocket_t::websock_perform_ssl_handshake(
 void public_channel_websocket_t::negotiate_websocket_connection() {
   http_request_.reset();
   http_response_.reset();
-  
+
   ssl_web_stream_->next_layer().async_handshake(
       net::ssl::stream_base::client, [this](beast::error_code const ec) {
         if (ec) {
@@ -204,7 +202,7 @@ void public_channel_websocket_t::negotiate_websocket_connection() {
 }
 
 void public_channel_websocket_t::perform_websocket_handshake() {
-  static auto const okex_handshake_path = "/ws/!miniTicker@arr";
+  static auto const binance_handshake_path = "/ws/!miniTicker@arr";
 
   auto opt = websock::stream_base::timeout();
   opt.idle_timeout = std::chrono::seconds(20);
@@ -220,7 +218,7 @@ void public_channel_websocket_t::perform_websocket_handshake() {
         }
       });
 
-  ssl_web_stream_->async_handshake(ws_host_, okex_handshake_path,
+  ssl_web_stream_->async_handshake(ws_host_, binance_handshake_path,
                                    [this](beast::error_code const ec) {
                                      if (ec) {
                                        return spdlog::error(ec.message());

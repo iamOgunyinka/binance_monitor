@@ -22,11 +22,12 @@ struct instrument_type_t {
 } // namespace binance
 
 namespace std {
+
 template <> struct hash<binance::instrument_type_t> {
   std::size_t
   operator()(binance::instrument_type_t const &instr) const noexcept {
-    auto const hasher = std::hash<std::string>{};
-    return  hasher(instr.instrument_id);
+    return std::hash<std::string>{}(instr.instrument_id);
   }
 };
+
 } // namespace std

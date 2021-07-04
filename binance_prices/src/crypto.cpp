@@ -98,4 +98,4 @@ std::basic_string<unsigned char> hmac256_encode(std::string const &data,
 }
 
 } // namespace utilities
-} // namespace okex
+} // namespace binance

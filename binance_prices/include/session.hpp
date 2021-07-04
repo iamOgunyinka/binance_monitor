@@ -12,7 +12,7 @@
 
 #include "fields_alloc.hpp"
 
-#define OK_REQUEST_PARAM                                                       \
+#define BN_REQUEST_PARAM                                                       \
   (string_request_t const &request, url_query_t const &optional_query)
 
 namespace binance {
@@ -94,14 +94,14 @@ private:
   void error_handler(string_response_t &&response, bool close_socket = false);
   void on_data_written(beast::error_code ec, std::size_t const bytes_written);
   void handle_requests(string_request_t const &request);
-  void index_page_handler OK_REQUEST_PARAM;
-  void get_file_handler OK_REQUEST_PARAM;
-  void get_trading_pairs_handler OK_REQUEST_PARAM;
-  void get_price_handler OK_REQUEST_PARAM;
-  void user_login_handler OK_REQUEST_PARAM;
-  void create_user_handler OK_REQUEST_PARAM;
-  void scheduled_job_handler OK_REQUEST_PARAM;
-  void get_user_jobs_handler OK_REQUEST_PARAM;
+  void index_page_handler BN_REQUEST_PARAM;
+  void get_file_handler BN_REQUEST_PARAM;
+  void get_trading_pairs_handler BN_REQUEST_PARAM;
+  void get_price_handler BN_REQUEST_PARAM;
+  void user_login_handler BN_REQUEST_PARAM;
+  void create_user_handler BN_REQUEST_PARAM;
+  void scheduled_job_handler BN_REQUEST_PARAM;
+  void get_user_jobs_handler BN_REQUEST_PARAM;
 
   void add_new_jobs(string_request_t const &);
   void stop_scheduled_jobs(string_request_t const &, task_state_e const);
@@ -180,4 +180,4 @@ std::optional<json::object_t>
 decode_bearer_token(std::string const &token, std::string const &secret_key);
 std::string get_alphanum_tablename(std::string);
 
-} // namespace okex
+} // namespace binance

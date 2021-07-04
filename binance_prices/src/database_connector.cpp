@@ -558,4 +558,4 @@ bool database_connector_t::add_new_user(std::string const &username,
   return true;
 }
 
-} // namespace okex
+} // namespace binance

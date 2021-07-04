@@ -282,13 +282,14 @@ void private_channel_websocket_t::interpret_generic_messages() {
   try {
     json::object_t const root = json::parse(buffer).get<json::object_t>();
     if (auto event_iter = root.find("e"); event_iter != root.end()) {
-      auto const event_type =
-          boost::to_lower_copy(event_iter->second.get<json::string_t>());
-      if (event_type == "executionreport") {
+      auto const event_type = event_iter->second.get<json::string_t>();
+      
+      // only three events are expected
+      if (event_type == "executionReport") {
         process_orders_execution_report(root);
-      } else if (event_type == "balanceupdate") {
+      } else if (event_type == "balanceUpdate") { // to-do
         // process_balance_update_report(root);
-      } else if (event_type == "outboundaccountposition") {
+      } else if (event_type == "outboundAccountPosition") { // to-do
         // process_outbound_account_position(root);
       }
     }
@@ -304,11 +305,21 @@ T get_value(json::object_t const &data, std::string const &key) {
     return data.at(key).get<json::number_integer_t>();
   } else if constexpr (std::is_same_v<T, json::string_t>) {
     return data.at(key).get<json::string_t>();
+  } else if constexpr (std::is_same_v<T, json::number_float_t>) {
+    return data.at(key).get<json::number_float_t>();
   }
   return {};
 }
 
-/** From Binance API doc
+void process_timet(std::string &result, std::size_t const time_t_value_ms) {
+  std::size_t const time_t_value = time_t_value_ms / 1'000;
+  if (auto opt_event_time = utilities::timet_to_string(time_t_value);
+      opt_event_time.has_value()) {
+    result = std::move(*opt_event_time);
+  }
+}
+
+/*** From Binance API doc
 {
   "E": 1499405658658,            // Event time
   "s": "ETHBTC",                 // Symbol
@@ -334,18 +345,11 @@ T get_value(json::object_t const &data, std::string const &key) {
 }
 ***/
 
-void process_timet(std::string &result, std::size_t const time_t_value_ms) {
-  std::size_t const time_t_value = time_t_value_ms / 1'000;
-  if (auto opt_event_time = utilities::timet_to_string(time_t_value);
-      opt_event_time.has_value()) {
-    result = std::move(*opt_event_time);
-  }
-}
-
 void private_channel_websocket_t::process_orders_execution_report(
     json::object_t const &order_event) {
   using string_t = json::string_t;
-  using number_t = json::number_integer_t;
+  using inumber_t = json::number_integer_t;
+  using fnumber_t = json::number_float_t;
 
   ws_order_info_t order_info{};
   order_info.instrument_id = get_value<string_t>(order_event, "s");
@@ -364,23 +368,29 @@ void private_channel_websocket_t::process_orders_execution_report(
   order_info.cummulative_filled_quantity =
       get_value<string_t>(order_event, "z");
 
-  order_info.order_id = std::to_string(get_value<number_t>(order_event, "i"));
-  order_info.trade_id = std::to_string(get_value<number_t>(order_event, "t"));
+  order_info.order_id = std::to_string(get_value<inumber_t>(order_event, "i"));
+  order_info.trade_id = std::to_string(get_value<inumber_t>(order_event, "t"));
+
   if (auto commission_asset_iter = order_event.find("N");
       commission_asset_iter != order_event.end()) {
+
     auto json_commission_asset = commission_asset_iter->second;
-    // documentation doesn't specify the time of this data
-    if (json_commission_asset.is_string()) { // most likely type
+    // documentation doesn't specify the type of this data but
+    // my best guess is that this type is most likely a string
+    if (json_commission_asset.is_string()) {
       order_info.commission_asset = json_commission_asset.get<string_t>();
     } else if (json_commission_asset.is_number()) {
       order_info.commission_asset =
-          std::to_string(json_commission_asset.get<json::number_float_t>());
+          std::to_string(json_commission_asset.get<fnumber_t>());
     }
   }
-  process_timet(order_info.event_time, get_value<number_t>(order_event, "E"));
+
+  process_timet(order_info.event_time, get_value<inumber_t>(order_event, "E"));
   process_timet(order_info.transaction_time,
-                get_value<number_t>(order_event, "T"));
-  process_timet(order_info.created_time, get_value<number_t>(order_event, "O"));
+                get_value<inumber_t>(order_event, "T"));
+  process_timet(order_info.created_time,
+                get_value<inumber_t>(order_event, "O"));
+
   order_info.for_aliased_account = host_info_->account_alias;
   order_info.telegram_group = host_info_->tg_group_name;
 

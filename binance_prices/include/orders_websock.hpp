@@ -25,4 +25,4 @@ public:
   void run() override;
 };
 
-} // namespace okex
+} // namespace binance

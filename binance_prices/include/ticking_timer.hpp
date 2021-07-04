@@ -44,4 +44,4 @@ public:
 namespace utilities {
 std::optional<std::string> timet_to_string(std::size_t const t);
 }
-} // namespace okex
+} // namespace binance

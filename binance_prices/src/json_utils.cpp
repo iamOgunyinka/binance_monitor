@@ -14,26 +14,6 @@ std::optional<json::array_t> read_array_json_file(std::string const &filename) {
 
 namespace utilities {
 
-std::optional<std::string> timet_to_okex_timezone() {
-  std::time_t current_time = std::time(nullptr);
-#if _MSC_VER && !__INTEL_COMPILER
-#pragma warning(disable : 4996)
-#endif
-  auto const tm_t = std::gmtime(&current_time);
-  auto const format = "%Y-%m-%dT%H:%M:%S.600Z";
-  if (!tm_t) {
-    return std::nullopt;
-  }
-  std::string output((std::size_t)32, (char)'\0');
-  auto const string_length =
-      std::strftime(output.data(), output.size(), format, tm_t);
-  if (string_length) {
-    output.resize(string_length);
-    return output;
-  }
-  return std::nullopt;
-}
-
 std::optional<std::string> timet_to_string(std::size_t const t) {
 #if _MSC_VER && !__INTEL_COMPILER
 #pragma warning(disable : 4996)
@@ -99,4 +79,4 @@ std::string get_random_string(std::size_t const length) {
 
 } // namespace utilities
 
-} // namespace okex
+} // namespace binance

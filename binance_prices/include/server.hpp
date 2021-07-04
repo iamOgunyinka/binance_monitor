@@ -44,4 +44,4 @@ private:
   void accept_connections();
 };
 
-} // namespace okex
+} // namespace binance

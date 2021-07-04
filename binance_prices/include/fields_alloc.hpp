@@ -128,4 +128,4 @@ public:
     return !(lhs == rhs);
   }
 };
-} // namespace okex
+} // namespace binance

@@ -143,4 +143,4 @@ trade_direction_e string_to_direction(std::string const &str) {
   return trade_direction_e::none;
 }
 
-} // namespace okex
+} // namespace binance

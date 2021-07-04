@@ -70,4 +70,4 @@ void server_t::accept_connections() {
                                 shared_from_this()));
 }
 
-} // namespace okex
+} // namespace binance

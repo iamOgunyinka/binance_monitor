@@ -22,4 +22,4 @@ public:
   static auto &get_all_scheduled_tasks() { return scheduled_tasks_; }
 };
 
-} // namespace okex
+} // namespace binance

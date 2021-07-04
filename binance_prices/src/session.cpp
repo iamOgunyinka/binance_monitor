@@ -527,7 +527,7 @@ void session_t::get_price_handler(string_request_t const &request,
         auto const &data = find_iter->second;
         auto const change =
             ((data.current_price - data.open_24h) / data.open_24h) * 100.0;
-        
+
         json::object_t item;
         item["name"] = data.instrument_id;
         item["price"] = data.current_price;

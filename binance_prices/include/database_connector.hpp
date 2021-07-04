@@ -105,4 +105,4 @@ public:
 [[nodiscard]] std::optional<db_config_t>
 parse_config_file(std::string const &filename, std::string const &config_name);
 
-} // namespace okex
+} // namespace binance

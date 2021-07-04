@@ -12,4 +12,4 @@ struct host_info_t {
   std::string ws_port_number{};
   std::string tg_group_name{};
 };
-} // namespace okex
+} // namespace binance

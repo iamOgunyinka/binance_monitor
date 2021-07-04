@@ -12,4 +12,4 @@ public_channels_t::~public_channels_t() { channel_connector_.reset(); }
 
 void public_channels_t::run() { channel_connector_->run(); }
 
-} // namespace okex
+} // namespace binance
