@@ -52,9 +52,7 @@ void server_t::on_connection_accepted(beast::error_code const &ec,
                                 [](std::shared_ptr<session_t> &session_t) {
                                   return session_t->is_closed();
                                 });
-      if (beg != sessions_.end()) {
-        sessions_.erase(beg, sessions_.end());
-      }
+      sessions_.erase(beg, sessions_.end());
     }
     sessions_.push_back(
         std::make_shared<session_t>(io_context_, std::move(socket)));
@@ -70,4 +68,4 @@ void server_t::accept_connections() {
                                 shared_from_this()));
 }
 
-} // namespace okex
+} // namespace binance

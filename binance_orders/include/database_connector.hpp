@@ -53,8 +53,11 @@ public:
   [[nodiscard]] bool add_new_host(host_info_t const &);
 
   void create_order_table(std::string const &tablename);
+  void create_balance_table(std::string const &tablename);
   void add_new_order(std::string const &tablename,
                      ws_order_info_t const &order);
+  void add_new_balance(std::string const &table_name,
+                       ws_balance_info_t const &balance);
 };
 
 [[nodiscard]] std::optional<db_config_t>

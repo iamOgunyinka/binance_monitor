@@ -42,9 +42,6 @@
     <ClInclude Include="include\orders_info.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\private_channel_websocket.hpp">
-      <Filter>Header Files\include</Filter>
-    </ClInclude>
     <ClInclude Include="include\request_handler.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
@@ -55,6 +52,9 @@
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\websock_launcher.hpp">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\user_data_stream.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,9 +71,6 @@
     <ClCompile Include="src\json_utils.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\private_channel_websocket.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
     <ClCompile Include="src\request_handler.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
@@ -88,6 +85,9 @@
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_data_stream.cpp">
+      <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

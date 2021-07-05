@@ -1,4 +1,4 @@
-#include "private_channel_websocket.hpp"
+#include "user_data_stream.hpp"
 #include "crypto.hpp"
 #include "request_handler.hpp"
 
@@ -7,21 +7,23 @@
 #include <boost/beast/http/write.hpp>
 
 namespace binance {
+using namespace fmt::v7::literals;
 
-char const *const private_channel_websocket_t::ws_host_ = "stream.binance.com";
-char const *const private_channel_websocket_t::ws_port_number_ = "9443";
+char const *const user_data_stream_t::rest_api_host_ = "api.binance.com";
+char const *const user_data_stream_t::ws_host_ = "stream.binance.com";
+char const *const user_data_stream_t::ws_port_number_ = "9443";
 
-using namespace fmt::v7;
+using namespace fmt::v7::literals;
 
-private_channel_websocket_t::private_channel_websocket_t(
-    net::io_context &io_context, net::ssl::context &ssl_ctx,
-    host_info_t &&host_info)
+user_data_stream_t::user_data_stream_t(net::io_context &io_context,
+                                       net::ssl::context &ssl_ctx,
+                                       host_info_t &&host_info)
     : io_context_{io_context}, ssl_ctx_{ssl_ctx},
-      ssl_web_stream_{}, resolver_{nullptr}, host_info_{std::move(host_info)} {}
+      ssl_web_stream_{}, resolver_{}, host_info_{std::move(host_info)} {}
 
-void private_channel_websocket_t::run() { rest_api_initiate_connection(); }
+void user_data_stream_t::run() { rest_api_initiate_connection(); }
 
-void private_channel_websocket_t::stop() {
+void user_data_stream_t::stop() {
   stopped_ = true;
 
   if (ssl_web_stream_) {
@@ -31,14 +33,14 @@ void private_channel_websocket_t::stop() {
   }
 }
 
-void private_channel_websocket_t::rest_api_initiate_connection() {
+void user_data_stream_t::rest_api_initiate_connection() {
   if (stopped_) {
     return;
   }
 
-  resolver_ = std::make_unique<resolver>(io_context_);
+  resolver_.emplace(io_context_);
   resolver_->async_resolve(
-      "api.binance.com", "https",
+      rest_api_host_, "https",
       [self = shared_from_this()](auto const error_code,
                                   resolver::results_type const &results) {
         if (error_code) {
@@ -48,7 +50,7 @@ void private_channel_websocket_t::rest_api_initiate_connection() {
       });
 }
 
-void private_channel_websocket_t::rest_api_connect_to(
+void user_data_stream_t::rest_api_connect_to(
     resolver::results_type const &connections) {
   resolver_.reset();
   ssl_web_stream_.emplace(io_context_, ssl_ctx_);
@@ -66,9 +68,10 @@ void private_channel_websocket_t::rest_api_connect_to(
                      });
 }
 
-void private_channel_websocket_t::rest_api_perform_ssl_connection(
+void user_data_stream_t::rest_api_perform_ssl_connection(
     resolver::results_type::endpoint_type const &ip) {
-  auto const host = "api.binance.com:" + std::to_string(ip.port());
+  auto const host = "{}:{}"_format(rest_api_host_, ip.port());
+
   // Set a timeout on the operation
   beast::get_lowest_layer(*ssl_web_stream_)
       .expires_after(std::chrono::seconds(30));
@@ -90,12 +93,12 @@ void private_channel_websocket_t::rest_api_perform_ssl_connection(
       });
 }
 
-void private_channel_websocket_t::rest_api_get_listen_key() {
+void user_data_stream_t::rest_api_get_listen_key() {
   rest_api_prepare_request();
   rest_api_send_request();
 }
 
-void private_channel_websocket_t::rest_api_prepare_request() {
+void user_data_stream_t::rest_api_prepare_request() {
   using http::field;
   using http::verb;
 
@@ -103,7 +106,7 @@ void private_channel_websocket_t::rest_api_prepare_request() {
   request.method(verb::post);
   request.version(11);
   request.target("/api/v3/userDataStream");
-  request.set(field::host, "api.binance.com");
+  request.set(field::host, rest_api_host_);
   request.set(field::user_agent, "PostmanRuntime/7.28.1");
   request.set(field::accept, "*/*");
   request.set(field::accept_language, "en-US,en;q=0.5 --compressed");
@@ -112,7 +115,7 @@ void private_channel_websocket_t::rest_api_prepare_request() {
   request.prepare_payload();
 }
 
-void private_channel_websocket_t::rest_api_send_request() {
+void user_data_stream_t::rest_api_send_request() {
   beast::get_lowest_layer(*ssl_web_stream_)
       .expires_after(std::chrono::seconds(20));
   http::async_write(ssl_web_stream_->next_layer(), *http_request_,
@@ -125,7 +128,7 @@ void private_channel_websocket_t::rest_api_send_request() {
                     });
 }
 
-void private_channel_websocket_t::rest_api_receive_response() {
+void user_data_stream_t::rest_api_receive_response() {
   http_request_.reset();
   listen_key_.reset();
 
@@ -141,8 +144,7 @@ void private_channel_websocket_t::rest_api_receive_response() {
       });
 }
 
-void private_channel_websocket_t::rest_api_on_data_received(
-    beast::error_code const ec) {
+void user_data_stream_t::rest_api_on_data_received(beast::error_code const ec) {
   if (ec) {
     return spdlog::error(ec.message());
   }
@@ -150,8 +152,8 @@ void private_channel_websocket_t::rest_api_on_data_received(
   try {
     auto const result =
         json::parse(http_response_->body()).get<json::object_t>();
-    if (auto listen_key_iter = result.find("listenKey");
-        listen_key_iter != result.end()) {
+    if (auto const listen_key_iter = result.find("listenKey");
+        listen_key_iter != result.cend()) {
       listen_key_.emplace(listen_key_iter->second.get<json::string_t>());
     } else {
       spdlog::error(http_response_->body());
@@ -165,12 +167,12 @@ void private_channel_websocket_t::rest_api_on_data_received(
   return ws_initiate_connection();
 }
 
-void private_channel_websocket_t::ws_initiate_connection() {
+void user_data_stream_t::ws_initiate_connection() {
   if (stopped_ || !listen_key_.has_value()) {
     return;
   }
   ssl_web_stream_.emplace(io_context_, ssl_ctx_);
-  resolver_ = std::make_unique<net::ip::tcp::resolver>(io_context_);
+  resolver_.emplace(io_context_);
 
   resolver_->async_resolve(
       ws_host_, ws_port_number_,
@@ -184,7 +186,7 @@ void private_channel_websocket_t::ws_initiate_connection() {
       });
 }
 
-void private_channel_websocket_t::ws_connect_to_names(
+void user_data_stream_t::ws_connect_to_names(
     net::ip::tcp::resolver::results_type const &resolved_names) {
 
   resolver_.reset();
@@ -205,7 +207,7 @@ void private_channel_websocket_t::ws_connect_to_names(
           });
 }
 
-void private_channel_websocket_t::ws_perform_ssl_handshake(
+void user_data_stream_t::ws_perform_ssl_handshake(
     net::ip::tcp::resolver::results_type::endpoint_type const &ep) {
   auto const host = ws_host_ + ':' + std::to_string(ep.port());
 
@@ -232,11 +234,13 @@ void private_channel_websocket_t::ws_perform_ssl_handshake(
 }
 
 // this sends an upgrade from HTTPS to ws protocol and thus ws handshake begins
-void private_channel_websocket_t::ws_upgrade_to_websocket() {
-  auto const okex_handshake_path = "/ws/" + listen_key_.value();
+// https://binance-docs.github.io/apidocs/spot/en/#user-data-streams
+
+void user_data_stream_t::ws_upgrade_to_websocket() {
+  auto const binance_handshake_path = "/ws/" + listen_key_.value();
   auto opt = websock::stream_base::timeout();
 
-  opt.idle_timeout = std::chrono::seconds(30);
+  opt.idle_timeout = std::chrono::minutes(5);
   opt.handshake_timeout = std::chrono::seconds(20);
 
   // enable the automatic keepalive pings
@@ -257,7 +261,7 @@ void private_channel_websocket_t::ws_upgrade_to_websocket() {
       });
 
   ssl_web_stream_->async_handshake(
-      ws_host_, okex_handshake_path,
+      ws_host_, binance_handshake_path,
       [self = shared_from_this()](beast::error_code const ec) {
         if (ec) {
           return spdlog::error(ec.message());
@@ -266,7 +270,7 @@ void private_channel_websocket_t::ws_upgrade_to_websocket() {
       });
 }
 
-void private_channel_websocket_t::ws_wait_for_messages() {
+void user_data_stream_t::ws_wait_for_messages() {
   buffer_.emplace();
   ssl_web_stream_->async_read(
       *buffer_, [self = shared_from_this()](beast::error_code const error_code,
@@ -279,22 +283,22 @@ void private_channel_websocket_t::ws_wait_for_messages() {
       });
 }
 
-void private_channel_websocket_t::ws_interpret_generic_messages() {
+void user_data_stream_t::ws_interpret_generic_messages() {
   char const *buffer_cstr = static_cast<char const *>(buffer_->cdata().data());
   std::string_view const buffer(buffer_cstr, buffer_->size());
 
   try {
     json::object_t const root = json::parse(buffer).get<json::object_t>();
-    if (auto event_iter = root.find("e"); event_iter != root.end()) {
+    if (auto const event_iter = root.find("e"); event_iter != root.cend()) {
       auto const event_type = event_iter->second.get<json::string_t>();
 
       // only three events are expected
       if (event_type == "executionReport") {
         ws_process_orders_execution_report(root);
-      } else if (event_type == "balanceUpdate") { // to-do
+      } else if (event_type == "balanceUpdate") {
         ws_process_balance_update(root);
-      } else if (event_type == "outboundAccountPosition") { // to-do
-        // process_outbound_account_position(root);
+      } else if (event_type == "outboundAccountPosition") {
+        ws_process_account_position(root);
       }
     }
   } catch (std::exception const &e) {
@@ -323,37 +327,9 @@ void process_timet(std::string &result, std::size_t const time_t_value_ms) {
   }
 }
 
-/*** From Binance API doc
-{
-  "E": 1499405658658,            // Event time
-  "s": "ETHBTC",                 // Symbol
-  "S": "BUY",                    // Side
-  "o": "LIMIT",                  // Order type
-  "f": "GTC",                    // Time in force
-  "q": "1.00000000",             // Order quantity
-  "p": "0.10264410",             // Order price
-  "P": "0.00000000",             // Stop price
-  "F": "0.00000000",             // Iceberg quantity
-  "x": "NEW",                    // Current execution type
-  "X": "NEW",                    // Current order status
-  "r": "NONE",                   // Order reject reason; will be an error code.
-  "i": 4293153,                  // Order ID
-  "l": "0.00000000",             // Last executed quantity
-  "z": "0.00000000",             // Cumulative filled quantity
-  "L": "0.00000000",             // Last executed price
-  "n": "0",                      // Commission amount
-  "N": null,                     // Commission asset
-  "T": 1499405658657,            // Transaction time
-  "t": -1,                       // Trade ID
-  "O": 1499405658657,            // Order creation time
-}
-***/
-
-void private_channel_websocket_t::ws_process_orders_execution_report(
+// https://binance-docs.github.io/apidocs/spot/en/#payload-order-update
+void user_data_stream_t::ws_process_orders_execution_report(
     json::object_t const &order_object) {
-  using string_t = json::string_t;
-  using inumber_t = json::number_integer_t;
-  using fnumber_t = json::number_float_t;
 
   ws_order_info_t order_info{};
   order_info.instrument_id = get_value<string_t>(order_object, "s");
@@ -375,8 +351,8 @@ void private_channel_websocket_t::ws_process_orders_execution_report(
   order_info.order_id = std::to_string(get_value<inumber_t>(order_object, "i"));
   order_info.trade_id = std::to_string(get_value<inumber_t>(order_object, "t"));
 
-  if (auto commission_asset_iter = order_object.find("N");
-      commission_asset_iter != order_object.end()) {
+  if (auto const commission_asset_iter = order_object.find("N");
+      commission_asset_iter != order_object.cend()) {
 
     auto json_commission_asset = commission_asset_iter->second;
     // documentation doesn't specify the type of this data but
@@ -398,13 +374,50 @@ void private_channel_websocket_t::ws_process_orders_execution_report(
   order_info.for_aliased_account = host_info_->account_alias;
   order_info.telegram_group = host_info_->tg_group_name;
 
-  auto &orders_container = request_handler_t::get_orders_container();
-  orders_container.append(std::move(order_info));
+  auto &streams_container = request_handler_t::get_stream_container();
+  streams_container.append(std::move(order_info));
 }
 
-void private_channel_websocket_t::ws_process_balance_update(
+// https://binance-docs.github.io/apidocs/spot/en/#payload-balance-update
+void user_data_stream_t::ws_process_balance_update(
     json::object_t const &balance_object) {
-  //
+  ws_balance_info_t balance_data{};
+  balance_data.balance = get_value<string_t>(balance_object, "d");
+  balance_data.instrument_id = get_value<string_t>(balance_object, "a");
+
+  process_timet(balance_data.event_time,
+                get_value<inumber_t>(balance_object, "E"));
+  process_timet(balance_data.clear_time,
+                get_value<inumber_t>(balance_object, "T"));
+  balance_data.for_aliased_account = host_info_->account_alias;
+  balance_data.telegram_group = host_info_->tg_group_name;
+
+  auto &streams_container = request_handler_t::get_stream_container();
+  streams_container.append(std::move(balance_data));
 }
 
+// https://binance-docs.github.io/apidocs/spot/en/#payload-account-update
+void user_data_stream_t::ws_process_account_position(
+    json::object_t const &account_object) {
+  std::string event_time{}, last_account_update{};
+
+  process_timet(event_time, get_value<inumber_t>(account_object, "E"));
+  process_timet(last_account_update, get_value<inumber_t>(account_object, "u"));
+  
+  ws_account_update_t data{};
+  data.event_time = event_time;
+  data.last_account_update = last_account_update;
+  data.for_aliased_account = host_info_->account_alias;
+  data.telegram_group = host_info_->tg_group_name;
+
+  auto const balances_array = account_object.at("B").get<json::array_t>();
+  auto &streams_container = request_handler_t::get_stream_container();
+  for (auto const &json_item : balances_array) {
+    auto const asset_item = json_item.get<json::object_t>();
+    data.instrument_id = get_value<string_t>(asset_item, "a");
+    data.free_amount = get_value<string_t>(asset_item, "f");
+    data.locked_amount = get_value<string_t>(asset_item, "l");
+    streams_container.append(data);
+  }
+}
 } // namespace binance

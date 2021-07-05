@@ -31,4 +31,23 @@ struct ws_order_info_t {
   std::string telegram_group{};
 };
 
+struct ws_balance_info_t {
+  std::string instrument_id{};
+  std::string balance{};
+  std::string event_time{};
+  std::string clear_time{};
+  std::string for_aliased_account{};
+  std::string telegram_group{};
+};
+
+struct ws_account_update_t {
+  std::string instrument_id{};
+  std::string free_amount{};
+  std::string locked_amount{};
+
+  std::string event_time{};
+  std::string last_account_update{};
+  std::string for_aliased_account{};
+  std::string telegram_group{};
+};
 } // namespace binance

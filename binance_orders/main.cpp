@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   ssl_context.set_default_verify_paths();
   ssl_context.set_verify_mode(boost::asio::ssl::verify_none);
 
-  std::vector<std::shared_ptr<binance::private_channel_websocket_t>> websocks{};
+  std::vector<std::shared_ptr<binance::user_data_stream_t>> websocks{};
   {
     std::thread websock_thread_handler{
         [&] { binance::websock_launcher(websocks, io_context, ssl_context); }};

@@ -159,6 +159,25 @@ bool database_connector_t::add_new_host(host_info_t const &host_info) {
   return true;
 }
 
+void database_connector_t::create_balance_table(std::string const &table_name) {
+  auto const sql_statement = R"(CREATE TABLE if not exists `{}` (
+	`id` INT(10) NOT NULL AUTO_INCREMENT,
+	`instrument_id` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`balance` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+    `event_time` DATETIME NULL DEFAULT NULL,
+	`clear_time` DATETIME NULL DEFAULT NULL,
+    PRIMARY KEY (`id`) USING BTREE) COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB)"_format(
+      table_name);
+
+  std::lock_guard<std::mutex> lock_g{db_mutex_};
+  try {
+    otl_cursor::direct_exec(otl_connector_, sql_statement.c_str(),
+                            otl_exception::enabled);
+  } catch (otl_exception const &e) {
+    log_sql_error(e);
+  }
+}
+
 void database_connector_t::create_order_table(std::string const &tablename) {
   auto const sql_statement = R"(CREATE TABLE if not exists `{}` (
 	`id` INT(10) NOT NULL AUTO_INCREMENT,
@@ -194,11 +213,28 @@ void database_connector_t::create_order_table(std::string const &tablename) {
   }
 }
 
-std::string string_or_null(std::string const &date_str) {
-  if (date_str.empty()) {
+std::string string_or_null(std::string const &str) {
+  if (str.empty()) {
     return "NULL";
   }
-  return "'" + date_str + "'";
+  return "'" + str + "'";
+}
+
+void database_connector_t::add_new_balance(std::string const &table_name,
+                                           ws_balance_info_t const &balance) {
+  auto const sql_statement =
+      "INSERT INTO {} (instrument_id, balance, event_time, clear_time)"
+      "VALUES ('{}', '{}', {}, {})"_format(table_name, balance.instrument_id,
+                                           balance.balance,
+                                           string_or_null(balance.event_time),
+                                           string_or_null(balance.clear_time));
+  std::lock_guard<std::mutex> lock_g{db_mutex_};
+  try {
+    otl_cursor::direct_exec(otl_connector_, sql_statement.c_str(),
+                            otl_exception::enabled);
+  } catch (otl_exception const &e) {
+    log_sql_error(e);
+  }
 }
 
 void database_connector_t::add_new_order(std::string const &tablename,

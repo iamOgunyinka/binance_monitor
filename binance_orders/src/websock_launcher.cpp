@@ -9,19 +9,19 @@
 namespace binance {
 
 void launch_websock_listeners(
-    std::vector<std::shared_ptr<private_channel_websocket_t>> &websocks,
+    std::vector<std::shared_ptr<user_data_stream_t>> &websocks,
     std::vector<host_info_t> &previous_hosts, net::io_context &io_context,
     ssl::context &ssl_context) {
   for (auto &host : previous_hosts) {
-    websocks.emplace_back(new private_channel_websocket_t(
-        io_context, ssl_context, std::move(host)));
+    websocks.emplace_back(
+        new user_data_stream_t(io_context, ssl_context, std::move(host)));
     websocks.back()->run();
   }
   io_context.run();
 }
 
 void launch_previous_hosts(
-    std::vector<std::shared_ptr<private_channel_websocket_t>> &websocks,
+    std::vector<std::shared_ptr<user_data_stream_t>> &websocks,
     net::io_context &io_context, ssl::context &ssl_context) {
 
   auto &database_connector = database_connector_t::s_get_db_connector();
@@ -60,6 +60,36 @@ std::string prepare_telegram_payload(ws_order_info_t const &order) {
   return payload;
 }
 
+std::string prepare_telegram_payload(ws_balance_info_t const &balance) {
+  std::string payload{"message="};
+  payload += ("Exchange: Binance%0A");
+  payload += ("Type: BalanceUpdate%0A");
+  payload += ("Token: " + balance.instrument_id + "%0A");
+  payload += ("Time: " + balance.clear_time + "%0A");
+  payload += ("Balance: " + balance.balance + "%0A");
+
+  // the name of the group to deliver the message to
+  payload += ("&name=" + balance.telegram_group);
+  boost::replace_all(payload, " ", "%20");
+  return payload;
+}
+
+std::string prepare_telegram_payload(ws_account_update_t const &account) {
+  std::string payload{"message="};
+  payload += ("Exchange: Binance%0A");
+  payload += ("Type: AccountUpdate%0A");
+  payload += ("Token: " + account.instrument_id + "%0A");
+  payload += ("Free: " + account.free_amount + "%0A");
+  payload += ("Locked: " + account.locked_amount + "%0A");
+  payload += ("EventTime: " + account.event_time + "%0A");
+  payload += ("LastUpdateTime: " + account.last_account_update + "%0A");
+
+  // the name of the group to deliver the message to
+  payload += ("&name=" + account.telegram_group);
+  boost::replace_all(payload, " ", "%20");
+  return payload;
+}
+
 void telegram_delivery_failed(std::string const &error_message) {
   spdlog::error(error_message);
 }
@@ -80,7 +110,7 @@ void send_telegram_message(
     }
   }
 
-  // none available?
+  // none available? Make attempt to remove all unused.
   if (message_senders.size() > 3) {
     auto remove_iter = std::remove_if(
         message_senders.begin(), message_senders.end(),
@@ -96,18 +126,18 @@ void send_telegram_message(
 
 void process_host_changes(
     host_info_t &&host,
-    std::vector<std::shared_ptr<private_channel_websocket_t>> &websocks,
+    std::vector<std::shared_ptr<user_data_stream_t>> &websocks,
     net::io_context &io_context, ssl::context &ssl_context) {
   if (host.changes == host_changed_e::no_changes) {
-    websocks.emplace_back(std::make_shared<private_channel_websocket_t>(
+    websocks.emplace_back(std::make_shared<user_data_stream_t>(
         io_context, ssl_context, std::move(host)));
     return websocks.back()->run();
   }
-  auto find_iter = std::find_if(
-      websocks.begin(), websocks.end(),
-      [&host](std::shared_ptr<private_channel_websocket_t> &websock) {
-        return host == websock->host_info();
-      });
+  auto find_iter =
+      std::find_if(websocks.begin(), websocks.end(),
+                   [&host](std::shared_ptr<user_data_stream_t> &websock) {
+                     return host == websock->host_info();
+                   });
 
   if (find_iter != websocks.end()) {
     auto const changes_proposed = host.changes;
@@ -121,7 +151,7 @@ void process_host_changes(
 }
 
 void websock_launcher(
-    std::vector<std::shared_ptr<private_channel_websocket_t>> &websocks,
+    std::vector<std::shared_ptr<user_data_stream_t>> &websocks,
     net::io_context &io_context, ssl::context &ssl_context) {
 
   auto &host_container = request_handler_t::get_host_container();
@@ -134,26 +164,41 @@ void websock_launcher(
 
 void background_persistent_orders_saver(net::io_context &io_context,
                                         ssl::context &ssl_context) {
-  auto &order_container = request_handler_t::get_orders_container();
+  auto &stream_container = request_handler_t::get_stream_container();
   auto &database_connector = database_connector_t::s_get_db_connector();
   std::map<std::string, std::string> account_table_map{};
   std::vector<std::shared_ptr<tg_message_sender_t>> message_senders{};
 
   while (true) {
-    auto item = order_container.get();
+    auto item_var = stream_container.get();
 
-    // send telegram message
-    auto payload = prepare_telegram_payload(item);
-    send_telegram_message(message_senders, std::move(payload), io_context,
-                          ssl_context);
-
-    // then save it locally in the DB
-    auto &tablename = account_table_map[item.for_aliased_account];
-    if (tablename.empty()) {
-      tablename = item.for_aliased_account + "_orders";
-      database_connector->create_order_table(tablename);
-    }
-    database_connector->add_new_order(tablename, item);
+    std::visit(
+        [&](auto &&item) {
+          // first send the telegram message
+          auto payload = prepare_telegram_payload(item);
+          send_telegram_message(message_senders, std::move(payload), io_context,
+                                ssl_context);
+          // then save it locally in the DB
+          auto &table_alias = account_table_map[item.for_aliased_account];
+          if (table_alias.empty()) {
+            table_alias = get_alphanum_tablename(item.for_aliased_account);
+            auto const orders_tablename = table_alias + "_orders";
+            auto const balance_tablename = table_alias + "_balance";
+            // auto const acct_update_tablename = table_alias + "_account";
+            database_connector->create_order_table(orders_tablename);
+            database_connector->create_balance_table(balance_tablename);
+          }
+          using item_type = std::decay_t<decltype(item)>;
+          if constexpr (std::is_same_v<item_type, ws_order_info_t>) {
+            auto const table_name = table_alias + "_orders";
+            database_connector->add_new_order(table_name, item);
+          } else if constexpr (std::is_same_v<item_type, ws_balance_info_t>) {
+            auto const table_name = table_alias + "_balance";
+            database_connector->add_new_balance(table_name, item);
+          } else {
+          }
+        },
+        item_var);
   }
 }
 

@@ -151,7 +151,7 @@
     <ClInclude Include="include\host_info.hpp" />
     <ClInclude Include="include\json_utils.hpp" />
     <ClInclude Include="include\orders_info.hpp" />
-    <ClInclude Include="include\private_channel_websocket.hpp" />
+    <ClInclude Include="include\user_data_stream.hpp" />
     <ClInclude Include="include\request_handler.hpp" />
     <ClInclude Include="include\server.hpp" />
     <ClInclude Include="include\session.hpp" />
@@ -163,7 +163,7 @@
     <ClCompile Include="src\tg_message_sender.cpp" />
     <ClCompile Include="src\database_connector.cpp" />
     <ClCompile Include="src\json_utils.cpp" />
-    <ClCompile Include="src\private_channel_websocket.cpp" />
+    <ClCompile Include="src\user_data_stream.cpp" />
     <ClCompile Include="src\request_handler.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\session.cpp" />

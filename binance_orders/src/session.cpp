@@ -18,6 +18,7 @@ std::string get_alphanum_tablename(std::string str) {
   };
   str.erase(std::remove_if(str.begin(), str.end(), non_alphanum_remover),
             str.end());
+  boost::to_lower(str);
   return str;
 }
 
