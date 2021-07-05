@@ -4,6 +4,7 @@
 
 namespace binance {
 
+// this domain name is where the telegram bot resides
 char const *const tg_message_sender_t::tg_host_ = "www.tg-rt.com";
 
 bool tg_message_sender_t::available_with_less_tasks() const {
@@ -121,4 +122,4 @@ void tg_message_sender_t::send_next_request() {
   }
 }
 
-} // namespace okex
+} // namespace binance

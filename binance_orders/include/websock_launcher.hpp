@@ -15,9 +15,9 @@ void websock_launcher(
     std::vector<std::shared_ptr<private_channel_websocket_t>> &,
     net::io_context &io_context, ssl::context &ssl_context);
 
-void background_persistent_orders_saver();
+void background_persistent_orders_saver(net::io_context &, ssl::context &);
 
-void monitor_host_changes();
+void monitor_database_host_table_changes();
 
 std::string get_alphanum_tablename(std::string);
 } // namespace binance

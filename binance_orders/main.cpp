@@ -59,10 +59,12 @@ int main(int argc, char *argv[]) {
         [&] { binance::websock_launcher(websocks, io_context, ssl_context); }};
     websock_thread_handler.detach();
 
-    std::thread order_monitorer{binance::background_persistent_orders_saver};
+    std::thread order_monitorer{[&] {
+      binance::background_persistent_orders_saver(io_context, ssl_context);
+    }};
     order_monitorer.detach();
 
-    std::thread host_monitorer{binance::monitor_host_changes};
+    std::thread host_monitorer{binance::monitor_database_host_table_changes};
     host_monitorer.detach();
 
     binance::launch_previous_hosts(websocks, io_context, ssl_context);

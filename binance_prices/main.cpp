@@ -12,10 +12,9 @@ namespace net = boost::asio;
 std::string BEARER_TOKEN_SECRET_KEY;
 
 int main(int argc, char *argv[]) {
-  CLI::App cli_parser{
-      "binance: an asynchronous web server for monitoring crypto orders"};
+  CLI::App cli_parser{"binance_prices: an asynchronous web server for "
+                      "monitoring crypto prices"};
   binance::command_line_interface_t args{};
-  auto const thread_count = std::thread::hardware_concurrency();
 
   cli_parser.add_option("-p", args.port, "port to bind server to", true);
   cli_parser.add_option("-a", args.ip_address, "IP address to use", true);
@@ -32,13 +31,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  boost::asio::ssl::context ssl_context(
-      boost::asio::ssl::context::tlsv12_client);
-  ssl_context.set_default_verify_paths();
-  ssl_context.set_verify_mode(boost::asio::ssl::verify_none);
-
-  net::io_context io_context{static_cast<int>(thread_count)};
-
   auto &database_connector =
       binance::database_connector_t::s_get_db_connector();
   database_connector->set_username(software_config->db_username);
@@ -50,13 +42,21 @@ int main(int argc, char *argv[]) {
   }
   BEARER_TOKEN_SECRET_KEY = software_config->jwt_secret_key;
 
+  auto const thread_count = std::thread::hardware_concurrency();
+  net::io_context io_context{static_cast<int>(thread_count)};
   auto server_instance = std::make_shared<binance::server_t>(io_context, args);
   if (!(*server_instance)) {
     return EXIT_FAILURE;
   }
   server_instance->run();
 
+  boost::asio::ssl::context ssl_context(
+      boost::asio::ssl::context::tlsv12_client);
+  ssl_context.set_default_verify_paths();
+  ssl_context.set_verify_mode(boost::asio::ssl::verify_none);
+
   std::vector<std::unique_ptr<binance::orders_websock_t>> websocks{};
+
   {
     std::thread price_monitorer{binance::background_price_saver};
     price_monitorer.detach();

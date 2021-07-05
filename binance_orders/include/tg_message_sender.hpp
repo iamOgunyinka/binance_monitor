@@ -17,7 +17,7 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 
 using resolver = net::ip::tcp::resolver;
-using PostOpCallback = std::function<void(std::string const &)>;
+using PostOpCallback = void (*)(std::string const &);
 
 class tg_message_sender_t
     : public std::enable_shared_from_this<tg_message_sender_t> {
@@ -50,9 +50,8 @@ public:
                       std::string &&payload, PostOpCallback error_callback,
                       PostOpCallback comp_callback)
       : io_context_{io_context}, ssl_ctx_{ssl_ctx}, resolver_{nullptr},
-        payloads_{std::move(payload)}, error_callback_{std::move(
-                                           error_callback)},
-        completion_callback_{std::move(comp_callback)} {}
+        payloads_{std::move(payload)}, error_callback_{error_callback},
+        completion_callback_{comp_callback} {}
 
   void start() { return run(); }
   bool completed_operation() { return operation_completed_; }

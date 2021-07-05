@@ -53,16 +53,16 @@ private:
   void rest_api_receive_response();
   void rest_api_on_data_received(beast::error_code const ec);
 
-  void initiate_websocket_connection();
-  void connect_to_resolved_names(resolver::results_type const &);
-  void perform_ssl_handshake(resolver::results_type::endpoint_type const &);
-  void perform_websocket_handshake();
-  void wait_for_messages();
-  void interpret_generic_messages();
+  void ws_initiate_connection();
+  void ws_connect_to_names(resolver::results_type const &);
+  void ws_perform_ssl_handshake(resolver::results_type::endpoint_type const &);
+  void ws_upgrade_to_websocket();
+  void ws_wait_for_messages();
+  void ws_interpret_generic_messages();
 
-  void process_orders_execution_report(json::object_t const &);
-  //void process_balance_update_report(json::object_t const &);
-  //void process_outbound_account_position(json::object_t const &);
+  void ws_process_orders_execution_report(json::object_t const &);
+  void ws_process_balance_update(json::object_t const &);
+  // void process_outbound_account_position(json::object_t const &);
 
 public:
   private_channel_websocket_t(net::io_context &, net::ssl::context &,

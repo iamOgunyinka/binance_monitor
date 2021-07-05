@@ -127,6 +127,8 @@ void private_channel_websocket_t::rest_api_send_request() {
 
 void private_channel_websocket_t::rest_api_receive_response() {
   http_request_.reset();
+  listen_key_.reset();
+
   buffer_.emplace();
   http_response_.emplace();
 
@@ -160,11 +162,11 @@ void private_channel_websocket_t::rest_api_on_data_received(
   }
   http_response_.reset();
   ssl_web_stream_.reset();
-  return initiate_websocket_connection();
+  return ws_initiate_connection();
 }
 
-void private_channel_websocket_t::initiate_websocket_connection() {
-  if (stopped_) {
+void private_channel_websocket_t::ws_initiate_connection() {
+  if (stopped_ || !listen_key_.has_value()) {
     return;
   }
   ssl_web_stream_.emplace(io_context_, ssl_ctx_);
@@ -178,11 +180,11 @@ void private_channel_websocket_t::initiate_websocket_connection() {
         if (error_code) {
           return spdlog::error(error_code.message());
         }
-        self->connect_to_resolved_names(results);
+        self->ws_connect_to_names(results);
       });
 }
 
-void private_channel_websocket_t::connect_to_resolved_names(
+void private_channel_websocket_t::ws_connect_to_names(
     net::ip::tcp::resolver::results_type const &resolved_names) {
 
   resolver_.reset();
@@ -199,11 +201,11 @@ void private_channel_websocket_t::connect_to_resolved_names(
             if (error_code) {
               return spdlog::error(error_code.message());
             }
-            self->perform_ssl_handshake(connected_name);
+            self->ws_perform_ssl_handshake(connected_name);
           });
 }
 
-void private_channel_websocket_t::perform_ssl_handshake(
+void private_channel_websocket_t::ws_perform_ssl_handshake(
     net::ip::tcp::resolver::results_type::endpoint_type const &ep) {
   auto const host = ws_host_ + ':' + std::to_string(ep.port());
 
@@ -225,11 +227,12 @@ void private_channel_websocket_t::perform_ssl_handshake(
           return spdlog::error(ec.message());
         }
         beast::get_lowest_layer(*self->ssl_web_stream_).expires_never();
-        return self->perform_websocket_handshake();
+        return self->ws_upgrade_to_websocket();
       });
 }
 
-void private_channel_websocket_t::perform_websocket_handshake() {
+// this sends an upgrade from HTTPS to ws protocol and thus ws handshake begins
+void private_channel_websocket_t::ws_upgrade_to_websocket() {
   auto const okex_handshake_path = "/ws/" + listen_key_.value();
   auto opt = websock::stream_base::timeout();
 
@@ -245,7 +248,8 @@ void private_channel_websocket_t::perform_websocket_handshake() {
         if (frame_type == websock::frame_type::close) {
           if (!self->stopped_) {
             self->ssl_web_stream_.reset();
-            return self->initiate_websocket_connection();
+            // start afresh, get new listen key etc
+            return self->rest_api_initiate_connection();
           }
         } else if (frame_type == websock::frame_type::pong) {
           spdlog::info("pong...");
@@ -258,24 +262,24 @@ void private_channel_websocket_t::perform_websocket_handshake() {
         if (ec) {
           return spdlog::error(ec.message());
         }
-        self->wait_for_messages();
+        self->ws_wait_for_messages();
       });
 }
 
-void private_channel_websocket_t::wait_for_messages() {
+void private_channel_websocket_t::ws_wait_for_messages() {
   buffer_.emplace();
   ssl_web_stream_->async_read(
       *buffer_, [self = shared_from_this()](beast::error_code const error_code,
                                             std::size_t const) {
         if (error_code) {
           spdlog::error(error_code.message());
-          return self->initiate_websocket_connection();
+          return self->rest_api_initiate_connection();
         }
-        self->interpret_generic_messages();
+        self->ws_interpret_generic_messages();
       });
 }
 
-void private_channel_websocket_t::interpret_generic_messages() {
+void private_channel_websocket_t::ws_interpret_generic_messages() {
   char const *buffer_cstr = static_cast<char const *>(buffer_->cdata().data());
   std::string_view const buffer(buffer_cstr, buffer_->size());
 
@@ -283,12 +287,12 @@ void private_channel_websocket_t::interpret_generic_messages() {
     json::object_t const root = json::parse(buffer).get<json::object_t>();
     if (auto event_iter = root.find("e"); event_iter != root.end()) {
       auto const event_type = event_iter->second.get<json::string_t>();
-      
+
       // only three events are expected
       if (event_type == "executionReport") {
-        process_orders_execution_report(root);
+        ws_process_orders_execution_report(root);
       } else if (event_type == "balanceUpdate") { // to-do
-        // process_balance_update_report(root);
+        ws_process_balance_update(root);
       } else if (event_type == "outboundAccountPosition") { // to-do
         // process_outbound_account_position(root);
       }
@@ -296,7 +300,7 @@ void private_channel_websocket_t::interpret_generic_messages() {
   } catch (std::exception const &e) {
     spdlog::error(e.what());
   }
-  return wait_for_messages();
+  return ws_wait_for_messages();
 }
 
 template <typename T>
@@ -345,34 +349,34 @@ void process_timet(std::string &result, std::size_t const time_t_value_ms) {
 }
 ***/
 
-void private_channel_websocket_t::process_orders_execution_report(
-    json::object_t const &order_event) {
+void private_channel_websocket_t::ws_process_orders_execution_report(
+    json::object_t const &order_object) {
   using string_t = json::string_t;
   using inumber_t = json::number_integer_t;
   using fnumber_t = json::number_float_t;
 
   ws_order_info_t order_info{};
-  order_info.instrument_id = get_value<string_t>(order_event, "s");
-  order_info.order_side = get_value<string_t>(order_event, "S");
-  order_info.order_type = get_value<string_t>(order_event, "o");
-  order_info.time_in_force = get_value<string_t>(order_event, "f");
-  order_info.quantity_purchased = get_value<string_t>(order_event, "q");
-  order_info.order_price = get_value<string_t>(order_event, "p");
-  order_info.stop_price = get_value<string_t>(order_event, "P");
-  order_info.execution_type = get_value<string_t>(order_event, "x");
-  order_info.order_status = get_value<string_t>(order_event, "X");
-  order_info.reject_reason = get_value<string_t>(order_event, "r");
-  order_info.last_filled_quantity = get_value<string_t>(order_event, "l");
-  order_info.commission_amount = get_value<string_t>(order_event, "n");
-  order_info.last_executed_price = get_value<string_t>(order_event, "L");
+  order_info.instrument_id = get_value<string_t>(order_object, "s");
+  order_info.order_side = get_value<string_t>(order_object, "S");
+  order_info.order_type = get_value<string_t>(order_object, "o");
+  order_info.time_in_force = get_value<string_t>(order_object, "f");
+  order_info.quantity_purchased = get_value<string_t>(order_object, "q");
+  order_info.order_price = get_value<string_t>(order_object, "p");
+  order_info.stop_price = get_value<string_t>(order_object, "P");
+  order_info.execution_type = get_value<string_t>(order_object, "x");
+  order_info.order_status = get_value<string_t>(order_object, "X");
+  order_info.reject_reason = get_value<string_t>(order_object, "r");
+  order_info.last_filled_quantity = get_value<string_t>(order_object, "l");
+  order_info.commission_amount = get_value<string_t>(order_object, "n");
+  order_info.last_executed_price = get_value<string_t>(order_object, "L");
   order_info.cummulative_filled_quantity =
-      get_value<string_t>(order_event, "z");
+      get_value<string_t>(order_object, "z");
 
-  order_info.order_id = std::to_string(get_value<inumber_t>(order_event, "i"));
-  order_info.trade_id = std::to_string(get_value<inumber_t>(order_event, "t"));
+  order_info.order_id = std::to_string(get_value<inumber_t>(order_object, "i"));
+  order_info.trade_id = std::to_string(get_value<inumber_t>(order_object, "t"));
 
-  if (auto commission_asset_iter = order_event.find("N");
-      commission_asset_iter != order_event.end()) {
+  if (auto commission_asset_iter = order_object.find("N");
+      commission_asset_iter != order_object.end()) {
 
     auto json_commission_asset = commission_asset_iter->second;
     // documentation doesn't specify the type of this data but
@@ -385,17 +389,22 @@ void private_channel_websocket_t::process_orders_execution_report(
     }
   }
 
-  process_timet(order_info.event_time, get_value<inumber_t>(order_event, "E"));
+  process_timet(order_info.event_time, get_value<inumber_t>(order_object, "E"));
   process_timet(order_info.transaction_time,
-                get_value<inumber_t>(order_event, "T"));
+                get_value<inumber_t>(order_object, "T"));
   process_timet(order_info.created_time,
-                get_value<inumber_t>(order_event, "O"));
+                get_value<inumber_t>(order_object, "O"));
 
   order_info.for_aliased_account = host_info_->account_alias;
   order_info.telegram_group = host_info_->tg_group_name;
 
   auto &orders_container = request_handler_t::get_orders_container();
   orders_container.append(std::move(order_info));
+}
+
+void private_channel_websocket_t::ws_process_balance_update(
+    json::object_t const &balance_object) {
+  //
 }
 
 } // namespace binance
