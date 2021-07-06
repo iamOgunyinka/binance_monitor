@@ -76,7 +76,20 @@ public:
   template <typename U> void append(U &&data) {
     std::lock_guard<std::mutex> lock_{mutex_};
     container_.push_back(std::forward<U>(data));
-    cv_.notify_one();
+    cv_.notify_all();
+  }
+
+  template <
+      typename Container,
+      typename = std::enable_if_t<std::is_convertible_v<
+          typename decltype(std::declval<Container>().begin())::value_type, T>>>
+  void append_list(Container &&new_list) {
+    std::lock_guard<std::mutex> lock_g{mutex_};
+    // container_.reserve(container_.size() + new_list.size());
+    for (auto &&item : new_list) {
+      container_.push_back(std::move(item));
+    }
+    cv_.notify_all();
   }
 
   bool empty() {

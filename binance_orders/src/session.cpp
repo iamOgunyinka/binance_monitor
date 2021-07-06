@@ -197,6 +197,9 @@ void session_t::upload_handler(string_request_t const &request,
   std::vector<std::string> error_list{};
   try {
     json::array_t const info_list = json::parse(body).get<json::array_t>();
+    std::vector<host_info_t> hosts{};
+    hosts.reserve(info_list.size());
+
     for (auto const &json_item : info_list) {
       json::object_t const info = json_item.get<json::object_t>();
       host_info_t host_info{};
@@ -206,11 +209,12 @@ void session_t::upload_handler(string_request_t const &request,
       host_info.tg_group_name = info.at("tg_group").get<json::string_t>();
 
       if (database_connector->add_new_host(host_info)) {
-        request_handler_t::get_host_container().append(std::move(host_info));
+        hosts.push_back(std::move(host_info));
       } else {
         error_list.push_back(host_info.api_key);
       }
     }
+    request_handler_t::get_host_container().append_list(std::move(hosts));
     return send_response(json_success(error_list, request));
   } catch (std::exception const &except) {
     spdlog::error(except.what());

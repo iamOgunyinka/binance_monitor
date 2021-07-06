@@ -146,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="include\containers.hpp" />
     <ClInclude Include="include\crypto.hpp" />
+    <ClInclude Include="include\listen_key_keepalive.hpp" />
     <ClInclude Include="include\tg_message_sender.hpp" />
     <ClInclude Include="include\database_connector.hpp" />
     <ClInclude Include="include\host_info.hpp" />
@@ -160,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\crypto.cpp" />
+    <ClCompile Include="src\listen_key_keepalive.cpp" />
     <ClCompile Include="src\tg_message_sender.cpp" />
     <ClCompile Include="src\database_connector.cpp" />
     <ClCompile Include="src\json_utils.cpp" />

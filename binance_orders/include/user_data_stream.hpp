@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/asio/high_resolution_timer.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/core/tcp_stream.hpp>
@@ -21,6 +22,9 @@ namespace http = boost::beast::http;
 namespace websock = beast::websocket;
 namespace ip = net::ip;
 
+class listen_key_keepalive_t;
+
+// https://binance-docs.github.io/apidocs/spot/en/#user-data-streams
 class user_data_stream_t
     : public std::enable_shared_from_this<user_data_stream_t> {
   using resolver = ip::tcp::resolver;
@@ -41,6 +45,8 @@ class user_data_stream_t
   std::optional<beast::flat_buffer> buffer_;
   std::optional<http::request<http::empty_body>> http_request_;
   std::optional<http::response<http::string_body>> http_response_;
+  std::optional<net::high_resolution_timer> periodic_timer_;
+  std::shared_ptr<listen_key_keepalive_t> listen_key_keepalive_;
   std::optional<std::string> listen_key_;
 
   bool stopped_ = false;
@@ -67,11 +73,14 @@ private:
   void ws_process_balance_update(json::object_t const &);
   void ws_process_account_position(json::object_t const &);
 
+  void activate_listen_key_keepalive();
+  void on_periodic_time_timeout();
+
 public:
   user_data_stream_t(net::io_context &, net::ssl::context &, host_info_t &&);
+  host_info_t &host_info() { return *host_info_; }
   void run();
   void stop();
-  host_info_t &host_info() { return *host_info_; }
 };
 
 namespace utilities {
@@ -81,6 +90,7 @@ std::string base64_encode(std::string const &binary_data);
 std::optional<std::string> timet_to_okex_timezone();
 std::optional<std::string> timet_to_string(std::size_t const t);
 std::optional<std::string> timet_to_string(std::string const &);
+
 } // namespace utilities
 
 } // namespace binance

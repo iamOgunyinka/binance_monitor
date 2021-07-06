@@ -105,8 +105,7 @@ void send_telegram_message(
 
   for (auto &sender : message_senders) {
     if (sender->available_with_less_tasks()) {
-      sender->add_payload(std::move(payload));
-      return;
+      return sender->add_payload(std::move(payload));
     }
   }
 
@@ -240,10 +239,10 @@ void monitor_database_host_table_changes() {
 
     for (auto iter = previous_hosts.cbegin(); iter != previous_hosts.cend();) {
       auto &old_host = *iter;
-      auto find_iter =
+      auto const find_iter =
           std::find(new_hosts.cbegin(), new_hosts.cend(), old_host);
-      if (find_iter ==
-          new_hosts.cend()) { // this account must have been removed
+      // this account must have been removed
+      if (find_iter == new_hosts.cend()) {
         auto new_host = old_host;
         new_host.changes = host_changed_e::host_removed;
         host_container.append(new_host);

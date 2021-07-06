@@ -1,5 +1,6 @@
 #include "user_data_stream.hpp"
 #include "crypto.hpp"
+#include "listen_key_keepalive.hpp"
 #include "request_handler.hpp"
 
 #include <boost/algorithm/string/case_conv.hpp>
@@ -38,7 +39,9 @@ void user_data_stream_t::rest_api_initiate_connection() {
     return;
   }
 
+  periodic_timer_.reset();
   resolver_.emplace(io_context_);
+
   resolver_->async_resolve(
       rest_api_host_, "https",
       [self = shared_from_this()](auto const error_code,
@@ -266,6 +269,10 @@ void user_data_stream_t::ws_upgrade_to_websocket() {
         if (ec) {
           return spdlog::error(ec.message());
         }
+
+        if (!self->periodic_timer_) {
+          self->activate_listen_key_keepalive();
+        }
         self->ws_wait_for_messages();
       });
 }
@@ -304,19 +311,29 @@ void user_data_stream_t::ws_interpret_generic_messages() {
   } catch (std::exception const &e) {
     spdlog::error(e.what());
   }
+
   return ws_wait_for_messages();
 }
 
-template <typename T>
-T get_value(json::object_t const &data, std::string const &key) {
-  if constexpr (std::is_same_v<T, json::number_integer_t>) {
-    return data.at(key).get<json::number_integer_t>();
-  } else if constexpr (std::is_same_v<T, json::string_t>) {
-    return data.at(key).get<json::string_t>();
-  } else if constexpr (std::is_same_v<T, json::number_float_t>) {
-    return data.at(key).get<json::number_float_t>();
-  }
-  return {};
+void user_data_stream_t::on_periodic_time_timeout() {
+  periodic_timer_->expires_after(std::chrono::minutes(30));
+  periodic_timer_->async_wait([self = shared_from_this()](
+                                  boost::system::error_code const &ec) {
+    if (ec || !self->ssl_web_stream_.has_value()) {
+      return;
+    }
+    self->listen_key_keepalive_ = std::make_shared<listen_key_keepalive_t>(
+        self->io_context_, self->ssl_ctx_, *self->listen_key_,
+        self->host_info_->api_key);
+    self->listen_key_keepalive_->run();
+    self->periodic_timer_->cancel();
+    net::post(self->io_context_, [self] { self->on_periodic_time_timeout(); });
+  });
+}
+
+void user_data_stream_t::activate_listen_key_keepalive() {
+  periodic_timer_.emplace(io_context_);
+  on_periodic_time_timeout();
 }
 
 void process_timet(std::string &result, std::size_t const time_t_value_ms) {
@@ -330,6 +347,7 @@ void process_timet(std::string &result, std::size_t const time_t_value_ms) {
 // https://binance-docs.github.io/apidocs/spot/en/#payload-order-update
 void user_data_stream_t::ws_process_orders_execution_report(
     json::object_t const &order_object) {
+  using utilities::get_value;
 
   ws_order_info_t order_info{};
   order_info.instrument_id = get_value<string_t>(order_object, "s");
@@ -381,6 +399,8 @@ void user_data_stream_t::ws_process_orders_execution_report(
 // https://binance-docs.github.io/apidocs/spot/en/#payload-balance-update
 void user_data_stream_t::ws_process_balance_update(
     json::object_t const &balance_object) {
+  using utilities::get_value;
+
   ws_balance_info_t balance_data{};
   balance_data.balance = get_value<string_t>(balance_object, "d");
   balance_data.instrument_id = get_value<string_t>(balance_object, "a");
@@ -399,11 +419,13 @@ void user_data_stream_t::ws_process_balance_update(
 // https://binance-docs.github.io/apidocs/spot/en/#payload-account-update
 void user_data_stream_t::ws_process_account_position(
     json::object_t const &account_object) {
+  using utilities::get_value;
+
   std::string event_time{}, last_account_update{};
 
   process_timet(event_time, get_value<inumber_t>(account_object, "E"));
   process_timet(last_account_update, get_value<inumber_t>(account_object, "u"));
-  
+
   ws_account_update_t data{};
   data.event_time = event_time;
   data.last_account_update = last_account_update;
@@ -411,13 +433,17 @@ void user_data_stream_t::ws_process_account_position(
   data.telegram_group = host_info_->tg_group_name;
 
   auto const balances_array = account_object.at("B").get<json::array_t>();
-  auto &streams_container = request_handler_t::get_stream_container();
+  std::vector<ws_account_update_t> updates{};
+  updates.reserve(balances_array.size());
+
   for (auto const &json_item : balances_array) {
     auto const asset_item = json_item.get<json::object_t>();
     data.instrument_id = get_value<string_t>(asset_item, "a");
     data.free_amount = get_value<string_t>(asset_item, "f");
     data.locked_amount = get_value<string_t>(asset_item, "l");
-    streams_container.append(data);
+    updates.push_back(data);
   }
+  auto &streams_container = request_handler_t::get_stream_container();
+  streams_container.append_list(std::move(updates));
 }
 } // namespace binance

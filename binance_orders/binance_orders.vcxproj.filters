@@ -57,6 +57,9 @@
     <ClInclude Include="include\user_data_stream.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
+    <ClInclude Include="include\listen_key_keepalive.hpp">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\crypto.cpp">
@@ -87,6 +90,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\user_data_stream.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\listen_key_keepalive.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>
