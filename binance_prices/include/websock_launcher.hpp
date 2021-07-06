@@ -1,16 +1,13 @@
 #pragma once
 
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ssl.hpp>
+#include "market_data_stream.hpp"
 
 namespace binance {
 
 namespace net = boost::asio;
 namespace ssl = net::ssl;
 
-class orders_websock_t;
-
-void launch_price_watcher(std::vector<std::unique_ptr<orders_websock_t>> &,
+void launch_price_watcher(std::vector<std::unique_ptr<market_data_stream_t>> &,
                           net::io_context &, ssl::context &ssl_context);
 
 void background_price_saver();

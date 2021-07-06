@@ -149,8 +149,7 @@
     <ClCompile Include="src\crypto.cpp" />
     <ClCompile Include="src\database_connector.cpp" />
     <ClCompile Include="src\json_utils.cpp" />
-    <ClCompile Include="src\orders_websock.cpp" />
-    <ClCompile Include="src\public_channel_websocket.cpp" />
+    <ClCompile Include="src\market_data_stream.cpp" />
     <ClCompile Include="src\request_handler.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\session.cpp" />
@@ -165,8 +164,7 @@
     <ClInclude Include="include\host_info.hpp" />
     <ClInclude Include="include\json_utils.hpp" />
     <ClInclude Include="include\orders_info.hpp" />
-    <ClInclude Include="include\orders_websock.hpp" />
-    <ClInclude Include="include\public_channel_websocket.hpp" />
+    <ClInclude Include="include\market_data_stream.hpp" />
     <ClInclude Include="include\request_handler.hpp" />
     <ClInclude Include="include\server.hpp" />
     <ClInclude Include="include\session.hpp" />

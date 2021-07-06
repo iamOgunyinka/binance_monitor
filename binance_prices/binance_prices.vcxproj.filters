@@ -36,9 +36,6 @@
     <ClCompile Include="src\json_utils.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\orders_websock.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
     <ClCompile Include="src\websock_launcher.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
@@ -48,7 +45,7 @@
     <ClCompile Include="src\crypto.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\public_channel_websocket.cpp">
+    <ClCompile Include="src\market_data_stream.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="src\ticking_timer.cpp">
@@ -74,9 +71,6 @@
     <ClInclude Include="include\json_utils.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\orders_websock.hpp">
-      <Filter>Header Files\include</Filter>
-    </ClInclude>
     <ClInclude Include="include\websock_launcher.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
@@ -92,7 +86,7 @@
     <ClInclude Include="include\crypto.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\public_channel_websocket.hpp">
+    <ClInclude Include="include\market_data_stream.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\subscription_data.hpp">

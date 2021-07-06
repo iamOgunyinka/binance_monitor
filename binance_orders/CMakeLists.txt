@@ -7,7 +7,7 @@ get_filename_component(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 set(Boost_USE_STATIC_LIBS OFF) 
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
-find_package(Boost 1.75.0 COMPONENTS)
+find_package(Boost 1.76.0 COMPONENTS)
 
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS}) 
@@ -72,7 +72,8 @@ set(SRC_FILES
   ./src/tg_message_sender.cpp
   ./src/websock_launcher.cpp
   ./main.cpp
-  ./src/private_channel_websocket.cpp
+  ./src/listen_key_keepalive.cpp
+  ./src/user_data_stream.cpp
 )
 
 source_group("Sources" FILES ${SRC_FILES})
@@ -85,7 +86,8 @@ set(HEADERS_FILES
   ./include/host_info.hpp
   ./include/json_utils.hpp
   ./include/orders_info.hpp
-  ./include/private_channel_websocket.hpp
+  ./include/listen_key_keepalive.hpp
+  ./include/user_data_stream.hpp
   ./include/request_handler.hpp
   ./include/server.hpp
   ./include/session.hpp

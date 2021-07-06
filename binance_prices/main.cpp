@@ -4,7 +4,6 @@
 #include <thread>
 
 #include "database_connector.hpp"
-#include "orders_websock.hpp"
 #include "server.hpp"
 #include "websock_launcher.hpp"
 
@@ -55,7 +54,7 @@ int main(int argc, char *argv[]) {
   ssl_context.set_default_verify_paths();
   ssl_context.set_verify_mode(boost::asio::ssl::verify_none);
 
-  std::vector<std::unique_ptr<binance::orders_websock_t>> websocks{};
+  std::vector<std::unique_ptr<binance::market_data_stream_t>> websocks{};
 
   {
     std::thread price_monitorer{binance::background_price_saver};

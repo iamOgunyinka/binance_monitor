@@ -8,7 +8,6 @@
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/ssl.hpp>
 #include <boost/beast/websocket/stream.hpp>
-#include <memory>
 #include <optional>
 
 #include "json_utils.hpp"
@@ -21,7 +20,8 @@ namespace websock = beast::websocket;
 namespace http = beast::http;
 namespace ip = net::ip;
 
-class public_channel_websocket_t {
+class market_data_stream_t {
+  static char const *const rest_api_host_;
   static char const *const ws_host_;
   static char const *const ws_port_number_;
 
@@ -30,7 +30,7 @@ class public_channel_websocket_t {
 
   net::io_context &io_context_;
   net::ssl::context &ssl_ctx_;
-  std::unique_ptr<resolver> resolver_;
+  std::optional<resolver> resolver_;
   std::optional<websock::stream<beast::ssl_stream<beast::tcp_stream>>>
       ssl_web_stream_;
   std::optional<beast::flat_buffer> buffer_;
@@ -58,7 +58,7 @@ private:
   void process_pushed_tickers_data(json::array_t const &);
 
 public:
-  public_channel_websocket_t(net::io_context &, net::ssl::context &);
+  market_data_stream_t(net::io_context &, net::ssl::context &);
   void run();
 };
 

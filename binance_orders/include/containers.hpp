@@ -3,48 +3,8 @@
 #include <condition_variable>
 #include <deque>
 #include <mutex>
-#include <unordered_set>
 
 namespace binance {
-
-template <typename Container, typename... IterList>
-bool any_of(Container const &container, IterList &&...iter_list) {
-  return (... || (std::cend(container) == iter_list));
-}
-
-struct twitter_name_t {
-  std::string username{};
-  std::string twitter_id{};
-};
-
-template <typename T> struct locked_set_t {
-private:
-  std::unordered_set<T> set_{};
-  std::mutex mutex_{};
-
-public:
-  void insert(T const &item) {
-    std::lock_guard<std::mutex> lock_g{mutex_};
-    set_.insert(item);
-  }
-
-  void insert(T &&item) {
-    std::lock_guard<std::mutex> lock_g{mutex_};
-    set_.insert(std::move(item));
-  }
-
-  template <typename Func> std::vector<T> all_items_matching(Func &&filter) {
-    std::lock_guard<std::mutex> lock_g{mutex_};
-    std::vector<T> items{};
-    for (auto const &item : set_) {
-      if (filter(item)) {
-        items.push_back(item);
-      }
-    }
-    return items;
-  }
-  auto size() const { return set_.size(); }
-};
 
 template <typename T, typename Container = std::deque<T>>
 struct waitable_container_t {

@@ -7,7 +7,7 @@ get_filename_component(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 set(Boost_USE_STATIC_LIBS OFF) 
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
-find_package(Boost 1.75.0 COMPONENTS)
+find_package(Boost 1.76.0 COMPONENTS)
 
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS}) 
@@ -26,8 +26,6 @@ include_directories(${PROJECT_DIR}/../third-party/miniz-cpp)
 include_directories(${PROJECT_DIR}/../third-party/cpp-jwt/include)
 
 link_directories(/usr/lib)
-
-link_libraries(stdc++fs)
 link_libraries(pthread ssl crypto odbc z stdc++fs)
 
 # Outputs
@@ -70,14 +68,13 @@ set(SRC_FILES
   ./src/crypto.cpp
   ./src/database_connector.cpp
   ./src/json_utils.cpp
-  ./src/orders_websock.cpp
   ./src/request_handler.cpp
   ./src/server.cpp
   ./src/session.cpp
   ./src/ticking_timer.cpp
   ./src/websock_launcher.cpp
   ./main.cpp
-  ./src/public_channel_websocket.cpp
+  ./src/market_data_stream.cpp
 )
 
 source_group("Sources" FILES ${SRC_FILES})
@@ -91,8 +88,7 @@ set(HEADERS_FILES
   ./include/host_info.hpp
   ./include/json_utils.hpp
   ./include/orders_info.hpp
-  ./include/orders_websock.hpp
-  ./include/public_channel_websocket.hpp
+  ./include/market_data_stream.hpp
   ./include/request_handler.hpp
   ./include/server.hpp
   ./include/session.hpp
@@ -136,4 +132,3 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /GL /Oi /Gy /Zi /EHsc /std:c++17)
     endif()
 endif()
-

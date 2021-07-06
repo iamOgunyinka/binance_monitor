@@ -1,6 +1,5 @@
 #include "websock_launcher.hpp"
 #include "database_connector.hpp"
-#include "orders_websock.hpp"
 #include "request_handler.hpp"
 #include "ticking_timer.hpp"
 #include <boost/algorithm/string/case_conv.hpp>
@@ -12,10 +11,10 @@
 namespace binance {
 
 void launch_price_watcher(
-    std::vector<std::unique_ptr<orders_websock_t>> &websocks,
+    std::vector<std::unique_ptr<market_data_stream_t>> &websocks,
     net::io_context &io_context, ssl::context &ssl_context) {
 
-  websocks.emplace_back(new public_channels_t(io_context, ssl_context));
+  websocks.emplace_back(new market_data_stream_t(io_context, ssl_context));
   websocks.back()->run();
 }
 
@@ -26,7 +25,9 @@ void background_price_saver() {
   while (true) {
     auto item = token_container.get();
     boost::to_upper(item.instrument_id);
-    pushed_subs[item.instrument_id] = item;
+    auto &data = pushed_subs[item.instrument_id];
+    data.current_price = item.current_price;
+    data.open_24h = item.open_24h;
   }
 }
 
