@@ -40,10 +40,10 @@ public:
   }
 
   template <
-      typename Container,
+      typename NewContainer,
       typename = std::enable_if_t<std::is_convertible_v<
-          typename decltype(std::declval<Container>().begin())::value_type, T>>>
-  void append_list(Container &&new_list) {
+          typename decltype(std::declval<NewContainer>().begin())::value_type, T>>>
+  void append_list(NewContainer &&new_list) {
     std::lock_guard<std::mutex> lock_g{mutex_};
     // container_.reserve(container_.size() + new_list.size());
     for (auto &&item : new_list) {

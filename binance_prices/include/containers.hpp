@@ -4,6 +4,7 @@
 #include <deque>
 #include <mutex>
 #include <unordered_set>
+#include <vector>
 
 namespace binance {
 
@@ -23,12 +24,12 @@ public:
     set_.insert(std::move(item));
   }
   template <
-      typename Container,
+      typename NewContainer,
       typename = std::enable_if_t<std::is_convertible_v<
-          typename decltype(std::declval<Container>().begin())::value_type, T>>>
-
-  void insert_list(Container &&container) {
-    using iter_t = typename Container::iterator;
+          typename decltype(std::declval<NewContainer>().begin())::value_type,
+          T>>>
+  void insert_list(NewContainer &&container) {
+    using iter_t = typename NewContainer::iterator;
     std::lock_guard<std::mutex> lock_g{mutex_};
     set_.insert(std::move_iterator<iter_t>(std::begin(container)),
                 std::move_iterator<iter_t>(std::end(container)));
@@ -44,7 +45,6 @@ public:
     }
     return items;
   }
-  auto size() const { return set_.size(); }
 };
 
 template <typename T, typename Container = std::deque<T>>
@@ -81,26 +81,18 @@ public:
   }
 
   template <
-      typename Container,
+      typename NewContainer,
       typename = std::enable_if_t<std::is_convertible_v<
-          typename decltype(std::declval<Container>().begin())::value_type, T>>>
-  void append_list(Container &&new_list) {
+          typename decltype(std::declval<NewContainer>().begin())::value_type,
+          T>>>
+  void append_list(NewContainer &&new_list) {
+    using iter_t = typename NewContainer::iterator;
+
     std::lock_guard<std::mutex> lock_g{mutex_};
-    using iter_t = typename Container::iterator;
     container_.insert(std::end(container_),
                       std::move_iterator<iter_t>(std::begin(new_list)),
                       std::move_iterator<iter_t>(std::end(new_list)));
     cv_.notify_all();
-  }
-
-  bool empty() {
-    std::lock_guard<std::mutex> lock_{mutex_};
-    return container_.empty();
-  }
-
-  std::size_t size() {
-    std::lock_guard<std::mutex> lock_{mutex_};
-    return container_.size();
   }
 };
 
