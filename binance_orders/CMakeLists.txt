@@ -19,6 +19,7 @@ set(PROJECT_NAME binance_orders)
 set(CMAKE_BUILD_TYPE Release)
 include_directories(${PROJECT_DIR}/include)
 include_directories(${PROJECT_DIR}/../third-party)
+include_directories(${PROJECT_DIR}/../)
 include_directories(${PROJECT_DIR}/../third-party/CLI11/include)
 include_directories(${PROJECT_DIR}/../third-party/json/single_include)
 include_directories(${PROJECT_DIR}/../third-party/spdlog/include)
@@ -63,9 +64,9 @@ message("${PROJECT_NAME}: CURR BIN DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 
 # Source Files
 set(SRC_FILES
-  ./src/crypto.cpp
+  ../common/crypto.cpp
+  ../common/json_utils.cpp
   ./src/database_connector.cpp
-  ./src/json_utils.cpp
   ./src/request_handler.cpp
   ./src/server.cpp
   ./src/session.cpp
@@ -80,11 +81,11 @@ source_group("Sources" FILES ${SRC_FILES})
 
 # Header Files
 set(HEADERS_FILES
-  ./include/containers.hpp
-  ./include/crypto.hpp
+  ../common/containers.hpp
+  ../common/crypto.hpp
+  ../common/json_utils.hpp
   ./include/database_connector.hpp
   ./include/host_info.hpp
-  ./include/json_utils.hpp
   ./include/orders_info.hpp
   ./include/listen_key_keepalive.hpp
   ./include/user_data_stream.hpp

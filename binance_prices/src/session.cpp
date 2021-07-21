@@ -1,5 +1,5 @@
 #include "session.hpp"
-#include "crypto.hpp"
+#include "common/crypto.hpp"
 #include "database_connector.hpp"
 #include "request_handler.hpp"
 #include "subscription_data.hpp"

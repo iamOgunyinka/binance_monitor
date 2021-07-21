@@ -1,5 +1,5 @@
 #include "database_connector.hpp"
-#include "json_utils.hpp"
+#include "common/json_utils.hpp"
 #include <spdlog/spdlog.h>
 #include <sstream>
 #include <thread>

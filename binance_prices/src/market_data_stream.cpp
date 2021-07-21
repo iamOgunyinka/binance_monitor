@@ -1,5 +1,5 @@
 #include "market_data_stream.hpp"
-#include "crypto.hpp"
+#include "common/crypto.hpp"
 #include "request_handler.hpp"
 
 #include <boost/beast/http/read.hpp>

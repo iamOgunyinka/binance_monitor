@@ -14,21 +14,62 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="Header Files\include">
-      <UniqueIdentifier>{086a2280-7b2e-4399-b396-7393b77f131b}</UniqueIdentifier>
+      <UniqueIdentifier>{21083535-8ca3-4e5b-99eb-d0a1199258cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\common">
+      <UniqueIdentifier>{b634f466-4776-4b42-9a0b-c565f9f03931}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common">
+      <UniqueIdentifier>{f6d8337b-49fc-457f-9b63-b0894672c394}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\src">
-      <UniqueIdentifier>{fb807f7c-b87c-444e-a510-fcbbf1cb2772}</UniqueIdentifier>
+      <UniqueIdentifier>{0769f62a-f611-4c14-a66e-49a00a02b3c1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\containers.hpp">
-      <Filter>Header Files\include</Filter>
+    <ClCompile Include="src\database_connector.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\listen_key_keepalive.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\request_handler.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\server.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\session.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tg_message_sender.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_data_stream.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\websock_launcher.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\crypto.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\json_utils.cpp">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\containers.hpp">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="include\crypto.hpp">
-      <Filter>Header Files\include</Filter>
+    <ClInclude Include="..\common\crypto.hpp">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
-    <ClInclude Include="include\tg_message_sender.hpp">
-      <Filter>Header Files\include</Filter>
+    <ClInclude Include="..\common\json_utils.hpp">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
     <ClInclude Include="include\database_connector.hpp">
       <Filter>Header Files\include</Filter>
@@ -36,7 +77,7 @@
     <ClInclude Include="include\host_info.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\json_utils.hpp">
+    <ClInclude Include="include\listen_key_keepalive.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\orders_info.hpp">
@@ -51,49 +92,14 @@
     <ClInclude Include="include\session.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\websock_launcher.hpp">
+    <ClInclude Include="include\tg_message_sender.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\user_data_stream.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\listen_key_keepalive.hpp">
+    <ClInclude Include="include\websock_launcher.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\crypto.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tg_message_sender.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\database_connector.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\json_utils.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\request_handler.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\server.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\session.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\websock_launcher.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\user_data_stream.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\listen_key_keepalive.cpp">
-      <Filter>Source Files\src</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

@@ -10,7 +10,7 @@
 #include <boost/beast/websocket/stream.hpp>
 #include <optional>
 
-#include "json_utils.hpp"
+#include "common/json_utils.hpp"
 
 namespace binance {
 

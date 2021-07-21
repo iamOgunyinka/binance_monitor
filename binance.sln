@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.31229.75
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "binance_prices", "binance_prices\binance_prices.vcxproj", "{D0A939EE-FD86-4387-8396-B137F950125E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "binance_orders", "binance_orders\binance_orders.vcxproj", "{62E0101E-5A00-45A8-B517-6D474C353781}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "binance_orders", "binance_orders\binance_orders.vcxproj", "{02C07A45-DB1C-4270-BFF3-5574D16CD122}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,14 +23,14 @@ Global
 		{D0A939EE-FD86-4387-8396-B137F950125E}.Release|x64.Build.0 = Release|x64
 		{D0A939EE-FD86-4387-8396-B137F950125E}.Release|x86.ActiveCfg = Release|Win32
 		{D0A939EE-FD86-4387-8396-B137F950125E}.Release|x86.Build.0 = Release|Win32
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Debug|x64.ActiveCfg = Debug|x64
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Debug|x64.Build.0 = Debug|x64
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Debug|x86.ActiveCfg = Debug|Win32
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Debug|x86.Build.0 = Debug|Win32
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Release|x64.ActiveCfg = Release|x64
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Release|x64.Build.0 = Release|x64
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Release|x86.ActiveCfg = Release|Win32
-		{62E0101E-5A00-45A8-B517-6D474C353781}.Release|x86.Build.0 = Release|Win32
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Debug|x64.ActiveCfg = Debug|x64
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Debug|x64.Build.0 = Debug|x64
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Debug|x86.ActiveCfg = Debug|Win32
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Debug|x86.Build.0 = Debug|Win32
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Release|x64.ActiveCfg = Release|x64
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Release|x64.Build.0 = Release|x64
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Release|x86.ActiveCfg = Release|Win32
+		{02C07A45-DB1C-4270-BFF3-5574D16CD122}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
