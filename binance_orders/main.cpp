@@ -9,6 +9,8 @@
 
 namespace net = boost::asio;
 
+std::string BOT_TOKEN{};
+
 int main(int argc, char *argv[]) {
   CLI::App cli_parser{"binance_orders: an asynchronous web server for "
                       "monitoring crypto orders on binance"};
@@ -34,6 +36,7 @@ int main(int argc, char *argv[]) {
   database_connector->set_username(software_config->db_username);
   database_connector->set_password(software_config->db_password);
   database_connector->set_database_name(software_config->db_dns);
+  BOT_TOKEN = software_config->bot_token;
 
   if (!database_connector->connect()) {
     return EXIT_FAILURE;

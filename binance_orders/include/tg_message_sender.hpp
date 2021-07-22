@@ -12,6 +12,11 @@
 
 namespace binance {
 
+struct tg_payload_t {
+  std::string text{};
+  std::string chat_id{};
+};
+
 namespace net = boost::asio;
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -30,7 +35,7 @@ class tg_message_sender_t
   std::unique_ptr<http::response<http::string_body>> http_response_;
   std::optional<beast::flat_buffer> buffer_{};
 
-  std::deque<std::string> payloads_;
+  std::deque<tg_payload_t> payloads_;
   PostOpCallback error_callback_;
   PostOpCallback completion_callback_;
   bool operation_completed_ = false;
@@ -47,7 +52,7 @@ private:
 
 public:
   tg_message_sender_t(net::io_context &io_context, net::ssl::context &ssl_ctx,
-                      std::string &&payload, PostOpCallback error_callback,
+                      tg_payload_t &&payload, PostOpCallback error_callback,
                       PostOpCallback comp_callback)
       : io_context_{io_context}, ssl_ctx_{ssl_ctx}, resolver_{nullptr},
         payloads_{std::move(payload)}, error_callback_{error_callback},
@@ -56,6 +61,6 @@ public:
   void start() { return run(); }
   bool completed_operation() { return operation_completed_; }
   bool available_with_less_tasks() const;
-  void add_payload(std::string &&);
+  void add_payload(tg_payload_t &&);
 };
 } // namespace binance

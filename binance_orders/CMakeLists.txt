@@ -74,6 +74,7 @@ set(SRC_FILES
   ./src/websock_launcher.cpp
   ./main.cpp
   ./src/listen_key_keepalive.cpp
+  ./src/chat_update.cpp
   ./src/user_data_stream.cpp
 )
 

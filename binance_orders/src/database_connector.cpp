@@ -45,6 +45,8 @@ std::optional<db_config_t> parse_config_file(std::string const &filename,
         db_config.db_username = db_data.at("username").get<json::string_t>();
         db_config.db_password = db_data.at("password").get<json::string_t>();
         db_config.db_dns = db_data.at("db_dns").get<json::string_t>();
+        db_config.bot_token =
+            file_content_object->at("bot_token").get<json::string_t>();
         return db_config;
       }
     }

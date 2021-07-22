@@ -27,9 +27,11 @@ struct db_config_t {
   std::string db_username{};
   std::string db_password{};
   std::string db_dns{};
+  std::string bot_token{};
 
   operator bool() {
-    return !(db_username.empty() && db_password.empty() && db_dns.empty());
+    return !(db_username.empty() && db_password.empty() && db_dns.empty() &&
+             bot_token.empty());
   }
 };
 

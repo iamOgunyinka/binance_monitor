@@ -147,6 +147,7 @@
     <ClCompile Include="..\common\crypto.cpp" />
     <ClCompile Include="..\common\json_utils.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\chat_update.cpp" />
     <ClCompile Include="src\database_connector.cpp" />
     <ClCompile Include="src\listen_key_keepalive.cpp" />
     <ClCompile Include="src\request_handler.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="..\common\containers.hpp" />
     <ClInclude Include="..\common\crypto.hpp" />
     <ClInclude Include="..\common\json_utils.hpp" />
+    <ClInclude Include="include\chat_update.hpp" />
     <ClInclude Include="include\database_connector.hpp" />
     <ClInclude Include="include\host_info.hpp" />
     <ClInclude Include="include\listen_key_keepalive.hpp" />

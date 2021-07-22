@@ -60,6 +60,9 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\chat_update.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\containers.hpp">
@@ -99,6 +102,9 @@
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\websock_launcher.hpp">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\chat_update.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>

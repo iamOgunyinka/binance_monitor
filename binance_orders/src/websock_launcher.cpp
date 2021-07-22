@@ -1,4 +1,5 @@
 #include "websock_launcher.hpp"
+#include "chat_update.hpp"
 #include "database_connector.hpp"
 #include "request_handler.hpp"
 #include "tg_message_sender.hpp"
@@ -7,6 +8,61 @@
 #include <thread>
 
 namespace binance {
+
+std::map<tg_handler_t::chat_name_t, tg_handler_t::chat_id_t>
+    tg_handler_t::chat_map_{};
+
+void on_tg_update_completion(std::string const &response,
+                             std::string const &error_msg) {
+  if (!error_msg.empty()) {
+    return spdlog::error(error_msg);
+  }
+  try {
+    auto const json_object = json::parse(response).get<json::object_t>();
+    if (auto const is_ok = json_object.at("ok").get<json::boolean_t>();
+        !is_ok) {
+      return spdlog::error("There was an error from the bot server");
+    }
+    auto const result_list = json_object.at("result").get<json::array_t>();
+    auto &chat_ids = tg_handler_t::chat_map_;
+
+    for (auto const &json_message : result_list) {
+      auto const message_item = json_message.get<json::object_t>();
+      auto const message_item_iter = message_item.find("message");
+      if (message_item_iter == message_item.cend()) {
+        continue;
+      }
+      auto const message_object =
+          message_item_iter->second.get<json::object_t>();
+      auto const chat_item_iter = message_object.find("chat");
+      if (chat_item_iter == message_object.cend()) {
+        continue;
+      }
+      auto const chat_object = chat_item_iter->second.get<json::object_t>();
+      auto const chat_id =
+          std::to_string(chat_object.at("id").get<json::number_integer_t>());
+      std::string chat_title{};
+      auto const chat_type = chat_object.at("type").get<json::string_t>();
+      if (chat_type == "group") {
+        chat_title = chat_object.at("title").get<json::string_t>();
+      } else if (chat_type == "private") {
+        chat_title = chat_object.at("username").get<json::string_t>();
+      }
+      chat_ids[chat_title] = chat_id;
+    }
+
+  } catch (std::exception const &e) {
+    spdlog::error(e.what());
+  }
+}
+
+void tg_get_new_updates(net::ssl::context &ssl_context) {
+  net::io_context io_context{};
+  auto sock = std::make_shared<chat_update_t>(io_context, ssl_context,
+                                              on_tg_update_completion);
+  sock->run();
+  io_context.run();
+}
 
 void launch_websock_listeners(
     std::vector<std::shared_ptr<user_data_stream_t>> &websocks,
@@ -36,8 +92,7 @@ std::string prepare_telegram_payload(ws_order_info_t const &order) {
   // %0A is defined as the newline character.
   // %20 is defined as the space character.
 
-  std::string payload{"message="};
-  payload += ("Exchange: Binance%0A");
+  std::string payload = "Exchange: Binance%0A";
   payload += ("OrderID: " + order.order_id + "%0A");
   payload += ("Token: " + order.instrument_id + "%0A");
   payload += ("Price: " + order.order_price + "%0A");
@@ -54,29 +109,23 @@ std::string prepare_telegram_payload(ws_order_info_t const &order) {
   payload += ("CreatedTime: " + order.created_time + "%0A");
   payload += ("TransactionTime: " + order.transaction_time + "%0A");
 
-  // the name of the group to deliver the message to
-  payload += ("&name=" + order.telegram_group);
   boost::replace_all(payload, " ", "%20");
   return payload;
 }
 
 std::string prepare_telegram_payload(ws_balance_info_t const &balance) {
-  std::string payload{"message="};
-  payload += ("Exchange: Binance%0A");
+  std::string payload = "Exchange: Binance%0A";
   payload += ("Type: BalanceUpdate%0A");
   payload += ("Token: " + balance.instrument_id + "%0A");
   payload += ("Time: " + balance.clear_time + "%0A");
   payload += ("Balance: " + balance.balance + "%0A");
-
-  // the name of the group to deliver the message to
-  payload += ("&name=" + balance.telegram_group);
   boost::replace_all(payload, " ", "%20");
+
   return payload;
 }
 
 std::string prepare_telegram_payload(ws_account_update_t const &account) {
-  std::string payload{"message="};
-  payload += ("Exchange: Binance%0A");
+  std::string payload = "Exchange: Binance%0A";
   payload += ("Type: AccountUpdate%0A");
   payload += ("Token: " + account.instrument_id + "%0A");
   payload += ("Free: " + account.free_amount + "%0A");
@@ -84,8 +133,6 @@ std::string prepare_telegram_payload(ws_account_update_t const &account) {
   payload += ("EventTime: " + account.event_time + "%0A");
   payload += ("LastUpdateTime: " + account.last_account_update + "%0A");
 
-  // the name of the group to deliver the message to
-  payload += ("&name=" + account.telegram_group);
   boost::replace_all(payload, " ", "%20");
   return payload;
 }
@@ -95,14 +142,24 @@ void telegram_delivery_failed(std::string const &error_message) {
 }
 
 void telegram_delivery_successful(std::string const &message_status) {
-  spdlog::info(message_status);
+  // spdlog::info(message_status);
 }
 
 void send_telegram_message(
     std::vector<std::shared_ptr<tg_message_sender_t>> &message_senders,
-    std::string &&payload, net::io_context &io_context,
+    std::string &&text, std::string const &tg_name, net::io_context &io_context,
     net::ssl::context &ssl_context) {
+  auto &chat_ids = tg_handler_t::chat_map_;
+  auto iter = chat_ids.find(tg_name);
+  if (iter == chat_ids.end()) {
+    tg_get_new_updates(ssl_context);
+    iter = chat_ids.find(tg_name);
+    if (iter == chat_ids.end()) {
+      return;
+    }
+  }
 
+  tg_payload_t payload{std::move(text), iter->second};
   for (auto &sender : message_senders) {
     if (sender->available_with_less_tasks()) {
       return sender->add_payload(std::move(payload));
@@ -175,8 +232,8 @@ void background_persistent_orders_saver(net::io_context &io_context,
         [&](auto &&item) {
           // first send the telegram message
           auto payload = prepare_telegram_payload(item);
-          send_telegram_message(message_senders, std::move(payload), io_context,
-                                ssl_context);
+          send_telegram_message(message_senders, std::move(payload),
+                                item.telegram_group, io_context, ssl_context);
           // then save it locally in the DB
           auto &table_alias = account_table_map[item.for_aliased_account];
           if (table_alias.empty()) {

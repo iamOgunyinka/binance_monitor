@@ -2,16 +2,18 @@
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/write.hpp>
 
+extern std::string BOT_TOKEN;
+
 namespace binance {
 
 // this domain name is where the telegram bot resides
-char const *const tg_message_sender_t::tg_host_ = "www.tg-rt.com";
+char const *const tg_message_sender_t::tg_host_ = "api.telegram.org";
 
 bool tg_message_sender_t::available_with_less_tasks() const {
   return !operation_completed_ && payloads_.size() < 10;
 }
 
-void tg_message_sender_t::add_payload(std::string &&payload) {
+void tg_message_sender_t::add_payload(tg_payload_t &&payload) {
   payloads_.push_back(std::move(payload));
 }
 
@@ -66,16 +68,19 @@ void tg_message_sender_t::perform_ssl_handshake() {
 void tg_message_sender_t::prepare_payload() {
   using http::field;
   using http::verb;
-  auto current_payload = payloads_.front();
+  auto payload = payloads_.front();
   payloads_.pop_front();
+  auto const target = "/bot" + BOT_TOKEN +
+                      "/sendMessage?chat_id=" + payload.chat_id +
+                      "&text=" + payload.text;
 
   http_request_ = std::make_unique<http::request<http::string_body>>();
   http_request_->method(verb::post);
-  http_request_->target("/");
+  http_request_->target(target);
   http_request_->version(11);
   http_request_->set(field::host, tg_host_);
   http_request_->set(field::content_type, "application/x-www-form-urlencoded");
-  http_request_->body() = std::move(current_payload);
+  http_request_->body() = {};
   http_request_->prepare_payload();
 }
 
