@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 
 namespace binance {
 
@@ -50,4 +51,12 @@ struct ws_account_update_t {
   std::string for_aliased_account{};
   std::string telegram_group{};
 };
+
+using chat_name_t = std::string;
+struct tg_chat_id_t {
+  int database_id{};
+  std::string telegram_chat_id{};
+};
+
+using tg_ccached_map_t = std::map<chat_name_t, tg_chat_id_t>;
 } // namespace binance

@@ -3,9 +3,9 @@
 #include <boost/asio/ssl/context.hpp>
 #include <thread>
 
+#include "background_threads.hpp"
 #include "database_connector.hpp"
 #include "server.hpp"
-#include "websock_launcher.hpp"
 
 namespace net = boost::asio;
 
@@ -62,9 +62,8 @@ int main(int argc, char *argv[]) {
         [&] { binance::websock_launcher(websocks, io_context, ssl_context); }};
     websock_thread_handler.detach();
 
-    std::thread order_monitorer{[&] {
-      binance::background_persistent_orders_saver(io_context, ssl_context);
-    }};
+    std::thread order_monitorer{
+        [&] { binance::persistent_orders_saver(io_context, ssl_context); }};
     order_monitorer.detach();
 
     std::thread host_monitorer{binance::monitor_database_host_table_changes};

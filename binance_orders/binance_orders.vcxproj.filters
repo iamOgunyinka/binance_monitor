@@ -48,7 +48,7 @@
     <ClCompile Include="src\user_data_stream.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\websock_launcher.cpp">
+    <ClCompile Include="src\background_threads.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="..\common\crypto.cpp">
@@ -61,6 +61,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\chat_update.cpp">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\telegram_process.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -101,10 +104,13 @@
     <ClInclude Include="include\user_data_stream.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
-    <ClInclude Include="include\websock_launcher.hpp">
+    <ClInclude Include="include\background_threads.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
     <ClInclude Include="include\chat_update.hpp">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\telegram_process.hpp">
       <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>

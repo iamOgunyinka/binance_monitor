@@ -126,9 +126,8 @@ std::vector<host_info_t> database_connector_t::get_available_hosts() {
       "SELECT alias, api_key, secret_key, tg_group FROM hosts";
   std::vector<host_info_t> hosts{};
   std::lock_guard<std::mutex> lock_g{db_mutex_};
-
   try {
-    otl_stream db_stream{10'000, sql_statement, otl_connector_};
+    otl_stream db_stream{10, sql_statement, otl_connector_};
     for (auto &item_stream : db_stream) {
       host_info_t host_info{};
       item_stream >> host_info.account_alias;
@@ -161,6 +160,23 @@ bool database_connector_t::add_new_host(host_info_t const &host_info) {
   return true;
 }
 
+void database_connector_t::create_telegram_cache_table() {
+  auto const sql_statement = R"(CREATE TABLE if not exists `tg_id_cache` (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`group_name` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`group_id` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE INDEX `group_name` (`group_name`) USING BTREE
+    ) COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB)";
+
+  try {
+    otl_cursor::direct_exec(otl_connector_, sql_statement,
+                            otl_exception::enabled);
+  } catch (otl_exception const &e) {
+    log_sql_error(e);
+  }
+}
+
 void database_connector_t::create_balance_table(std::string const &table_name) {
   auto const sql_statement = R"(CREATE TABLE if not exists `{}` (
 	`id` INT(10) NOT NULL AUTO_INCREMENT,
@@ -170,7 +186,6 @@ void database_connector_t::create_balance_table(std::string const &table_name) {
 	`clear_time` DATETIME NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE) COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB)"_format(
       table_name);
-
   std::lock_guard<std::mutex> lock_g{db_mutex_};
   try {
     otl_cursor::direct_exec(otl_connector_, sql_statement.c_str(),
@@ -206,7 +221,6 @@ void database_connector_t::create_order_table(std::string const &tablename) {
     PRIMARY KEY (`id`) USING BTREE) COLLATE='utf8mb4_unicode_ci' ENGINE=InnoDB)"_format(
       tablename);
   std::lock_guard<std::mutex> lock_g{db_mutex_};
-
   try {
     otl_cursor::direct_exec(otl_connector_, sql_statement.c_str(),
                             otl_exception::enabled);
@@ -260,12 +274,60 @@ void database_connector_t::add_new_order(std::string const &tablename,
           string_or_null(order.transaction_time),
           string_or_null(order.created_time));
   std::lock_guard<std::mutex> lock_g{db_mutex_};
-
   try {
     otl_cursor::direct_exec(otl_connector_, sql_statement.c_str(),
                             otl_exception::enabled);
   } catch (otl_exception const &e) {
     log_sql_error(e);
+  }
+}
+
+tg_ccached_map_t database_connector_t::get_tg_cached_ids() {
+  auto const sql_statement =
+      "SELECT group_id, group_name, id FROM `tg_id_cache`";
+  tg_ccached_map_t result{};
+
+  std::lock_guard<std::mutex> lock_g{db_mutex_};
+  create_telegram_cache_table();
+
+  try {
+    otl_stream db_stream{10, sql_statement, otl_connector_};
+    for (auto &data_stream : db_stream) {
+      chat_name_t chat_name{};
+      tg_chat_id_t chat_info{};
+
+      data_stream >> chat_info.telegram_chat_id;
+      data_stream >> chat_name;
+      data_stream.operator>>(chat_info.database_id);
+      result[chat_name] = std::move(chat_info);
+    }
+  } catch (otl_exception const &e) {
+    log_sql_error(e);
+  }
+  return result;
+}
+
+void database_connector_t::insert_update_cached_ids(
+    tg_ccached_map_t const &chat_id_map) {
+  std::string sql_statement{};
+  std::lock_guard<std::mutex> lock_g{db_mutex_};
+
+  for (auto const &[chat_name, chat_info] : chat_id_map) {
+    if (chat_info.database_id == 0) { // an insert
+      sql_statement =
+          "INSERT INTO `tg_id_cache`(group_id, group_name)"
+          "VALUES ('{}', '{}')"_format(chat_info.telegram_chat_id, chat_name);
+    } else { // an update
+      sql_statement = "UPDATE `tg_id_cache` SET group_id='{}', group_name='{}'"
+                      " WHERE id='{}'"_format(chat_info.telegram_chat_id,
+                                              chat_name, chat_info.database_id);
+    }
+    try {
+      otl_cursor::direct_exec(otl_connector_, sql_statement.c_str(),
+                              otl_exception::enabled);
+    } catch (otl_exception const &e) {
+      log_sql_error(e);
+    }
   }
 }
 

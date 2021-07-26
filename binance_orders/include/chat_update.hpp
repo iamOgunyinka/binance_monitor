@@ -17,7 +17,8 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 namespace ip = net::ip;
 
-using completion_handler_t = void (*)(std::string const &, std::string const &);
+using completion_handler_t =
+    std::function<void(std::string const &, std::string const &)>;
 
 class chat_update_t : public std::enable_shared_from_this<chat_update_t> {
   using resolver = ip::tcp::resolver;

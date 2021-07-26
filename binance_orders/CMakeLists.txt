@@ -74,6 +74,7 @@ set(SRC_FILES
   ./src/websock_launcher.cpp
   ./main.cpp
   ./src/listen_key_keepalive.cpp
+  ./src/telegram_process.cpp
   ./src/chat_update.cpp
   ./src/user_data_stream.cpp
 )
@@ -96,6 +97,7 @@ set(HEADERS_FILES
   ./include/tg_message_sender.hpp
   ../third-party/otlv4.h
   ./include/websock_launcher.hpp
+  ./include/telegram_process.hpp
 )
 
 source_group("Headers" FILES ${HEADERS_FILES})

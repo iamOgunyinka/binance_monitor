@@ -153,9 +153,10 @@
     <ClCompile Include="src\request_handler.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\session.cpp" />
+    <ClCompile Include="src\telegram_process.cpp" />
     <ClCompile Include="src\tg_message_sender.cpp" />
     <ClCompile Include="src\user_data_stream.cpp" />
-    <ClCompile Include="src\websock_launcher.cpp" />
+    <ClCompile Include="src\background_threads.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\containers.hpp" />
@@ -169,9 +170,10 @@
     <ClInclude Include="include\request_handler.hpp" />
     <ClInclude Include="include\server.hpp" />
     <ClInclude Include="include\session.hpp" />
+    <ClInclude Include="include\telegram_process.hpp" />
     <ClInclude Include="include\tg_message_sender.hpp" />
     <ClInclude Include="include\user_data_stream.hpp" />
-    <ClInclude Include="include\websock_launcher.hpp" />
+    <ClInclude Include="include\background_threads.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

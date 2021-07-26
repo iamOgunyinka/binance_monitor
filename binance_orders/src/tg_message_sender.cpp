@@ -6,7 +6,6 @@ extern std::string BOT_TOKEN;
 
 namespace binance {
 
-// this domain name is where the telegram bot resides
 char const *const tg_message_sender_t::tg_host_ = "api.telegram.org";
 
 bool tg_message_sender_t::available_with_less_tasks() const {

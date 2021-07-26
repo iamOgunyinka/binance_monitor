@@ -56,10 +56,13 @@ public:
 
   void create_order_table(std::string const &tablename);
   void create_balance_table(std::string const &tablename);
+  void create_telegram_cache_table();
   void add_new_order(std::string const &tablename,
                      ws_order_info_t const &order);
   void add_new_balance(std::string const &table_name,
                        ws_balance_info_t const &balance);
+  void insert_update_cached_ids(tg_ccached_map_t const &chat_id_map);
+  tg_ccached_map_t get_tg_cached_ids();
 };
 
 [[nodiscard]] std::optional<db_config_t>
