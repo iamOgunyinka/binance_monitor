@@ -71,7 +71,7 @@ set(SRC_FILES
   ./src/server.cpp
   ./src/session.cpp
   ./src/tg_message_sender.cpp
-  ./src/websock_launcher.cpp
+  ./src/background_threads.cpp
   ./main.cpp
   ./src/listen_key_keepalive.cpp
   ./src/telegram_process.cpp
@@ -96,7 +96,7 @@ set(HEADERS_FILES
   ./include/session.hpp
   ./include/tg_message_sender.hpp
   ../third-party/otlv4.h
-  ./include/websock_launcher.hpp
+  ./include/background_threads.hpp
   ./include/telegram_process.hpp
 )
 
