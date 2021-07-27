@@ -22,6 +22,7 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 
 using resolver = net::ip::tcp::resolver;
+
 using PostOpCallback = void (*)(std::string const &);
 
 class tg_message_sender_t
@@ -30,9 +31,9 @@ class tg_message_sender_t
   net::ssl::context &ssl_ctx_;
   std::unique_ptr<beast::ssl_stream<beast::tcp_stream>> ssl_web_stream_{
       nullptr};
-  std::unique_ptr<resolver> resolver_;
-  std::unique_ptr<http::request<http::string_body>> http_request_;
-  std::unique_ptr<http::response<http::string_body>> http_response_;
+  std::optional<resolver> resolver_;
+  std::optional<http::request<http::string_body>> http_request_;
+  std::optional<http::response<http::string_body>> http_response_;
   std::optional<beast::flat_buffer> buffer_{};
 
   std::deque<tg_payload_t> payloads_;
@@ -49,6 +50,8 @@ private:
   void receive_data();
   void send_request();
   void send_next_request();
+  void reestablish_connection();
+  void initiate_connection();
 
 public:
   tg_message_sender_t(net::io_context &io_context, net::ssl::context &ssl_ctx,

@@ -25,12 +25,11 @@ void listen_key_keepalive_t::resolve_name() {
   resolver_.emplace(io_context_);
   resolver_->async_resolve(
       host_, "https",
-      [self = shared_from_this()](auto const error_code,
-                                  resolver::results_type const &results) {
+      [this](auto const error_code, resolver::results_type const &results) {
         if (error_code) {
           return spdlog::error(error_code.message());
         }
-        self->connect_to_names(results);
+        connect_to_names(results);
       });
 }
 
@@ -41,13 +40,12 @@ void listen_key_keepalive_t::connect_to_names(
   beast::get_lowest_layer(*ssl_stream_).expires_after(std::chrono::seconds(30));
   beast::get_lowest_layer(*ssl_stream_)
       .async_connect(resolved_names,
-                     [self = shared_from_this()](
-                         beast::error_code const error_code,
-                         resolver::results_type::endpoint_type const &ip) {
+                     [this](beast::error_code const error_code,
+                            resolver::results_type::endpoint_type const &ip) {
                        if (error_code) {
                          return spdlog::error(error_code.message());
                        }
-                       self->perform_ssl_connection(ip);
+                       perform_ssl_connection(ip);
                      });
 }
 
@@ -64,14 +62,13 @@ void listen_key_keepalive_t::perform_ssl_connection(
                                       net::error::get_ssl_category());
     return spdlog::error(ec.message());
   }
-  ssl_stream_->async_handshake(
-      net::ssl::stream_base::client,
-      [self = shared_from_this()](beast::error_code const ec) {
-        if (ec) {
-          return spdlog::error(ec.message());
-        }
-        self->renew_listen_key();
-      });
+  ssl_stream_->async_handshake(net::ssl::stream_base::client,
+                               [this](beast::error_code const ec) {
+                                 if (ec) {
+                                   return spdlog::error(ec.message());
+                                 }
+                                 renew_listen_key();
+                               });
 }
 
 void listen_key_keepalive_t::renew_listen_key() {
@@ -97,12 +94,11 @@ void listen_key_keepalive_t::prepare_request() {
 void listen_key_keepalive_t::send_request() {
   beast::get_lowest_layer(*ssl_stream_).expires_after(std::chrono::seconds(20));
   http::async_write(*ssl_stream_, *http_request_,
-                    [self = shared_from_this()](beast::error_code const ec,
-                                                std::size_t const) {
+                    [this](beast::error_code const ec, std::size_t const) {
                       if (ec) {
                         return spdlog::error(ec.message());
                       }
-                      self->receive_response();
+                      receive_response();
                     });
 }
 
@@ -112,14 +108,13 @@ void listen_key_keepalive_t::receive_response() {
   http_response_.emplace();
 
   beast::get_lowest_layer(*ssl_stream_).expires_after(std::chrono::seconds(20));
-  http::async_read(
-      *ssl_stream_, *buffer_, *http_response_,
-      [self = shared_from_this()](beast::error_code ec, std::size_t const sz) {
-        if (ec) {
-          return spdlog::error(ec.message());
-        }
-        self->on_data_received();
-      });
+  http::async_read(*ssl_stream_, *buffer_, *http_response_,
+                   [this](beast::error_code ec, std::size_t const sz) {
+                     if (ec) {
+                       return spdlog::error(ec.message());
+                     }
+                     on_data_received();
+                   });
 }
 
 void listen_key_keepalive_t::on_data_received() {

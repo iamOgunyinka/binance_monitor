@@ -21,8 +21,7 @@ namespace ip = net::ip;
  * close after 60 minutes. It's recommended to send a ping about every 30
  * minutes.
  */
-class listen_key_keepalive_t
-    : public std::enable_shared_from_this<listen_key_keepalive_t> {
+class listen_key_keepalive_t {
 
   using resolver = ip::tcp::resolver;
 

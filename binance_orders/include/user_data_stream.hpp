@@ -11,8 +11,8 @@
 #include <boost/beast/websocket/stream.hpp>
 #include <optional>
 
-#include "host_info.hpp"
 #include "common/json_utils.hpp"
+#include "host_info.hpp"
 
 namespace binance {
 
@@ -45,8 +45,10 @@ class user_data_stream_t
   std::optional<beast::flat_buffer> buffer_;
   std::optional<http::request<http::empty_body>> http_request_;
   std::optional<http::response<http::string_body>> http_response_;
-  std::optional<net::high_resolution_timer> periodic_timer_;
-  std::shared_ptr<listen_key_keepalive_t> listen_key_keepalive_;
+
+  std::optional<net::high_resolution_timer> on_error_timer_;
+  std::optional<net::high_resolution_timer> listen_key_timer_;
+  std::unique_ptr<listen_key_keepalive_t> listen_key_keepalive_;
   std::optional<std::string> listen_key_;
 
   bool stopped_ = false;
@@ -76,8 +78,14 @@ private:
   void activate_listen_key_keepalive();
   void on_periodic_time_timeout();
 
+  void on_ws_connection_severed();
+
 public:
   user_data_stream_t(net::io_context &, net::ssl::context &, host_info_t &&);
+  // we now need to supply a user-defined dtor because listen_key_keepalive_t is
+  // forward declared here, and the compiler cannot generate a default dtor for
+  // members with incomplete type
+  ~user_data_stream_t();
   host_info_t &host_info() { return *host_info_; }
   void run();
   void stop();

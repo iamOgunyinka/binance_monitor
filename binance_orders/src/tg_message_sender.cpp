@@ -9,15 +9,22 @@ namespace binance {
 char const *const tg_message_sender_t::tg_host_ = "api.telegram.org";
 
 bool tg_message_sender_t::available_with_less_tasks() const {
-  return !operation_completed_ && payloads_.size() < 10;
+  return !operation_completed_ && payloads_.size() < 20;
 }
 
 void tg_message_sender_t::add_payload(tg_payload_t &&payload) {
   payloads_.push_back(std::move(payload));
 }
 
-void tg_message_sender_t::run() {
-  resolver_ = std::make_unique<resolver>(io_context_);
+void tg_message_sender_t::run() { initiate_connection(); }
+
+void tg_message_sender_t::reestablish_connection() {
+  ssl_web_stream_.reset();
+  initiate_connection();
+}
+
+void tg_message_sender_t::initiate_connection() {
+  resolver_.emplace(io_context_);
   resolver_->async_resolve(
       tg_host_, "https",
       [self = shared_from_this()](auto const &ec, auto const &resolves) {
@@ -32,6 +39,7 @@ void tg_message_sender_t::run() {
 void tg_message_sender_t::connect_to_server(
     resolver::results_type const &resolves) {
   resolver_.reset(); // the resolver is done
+
   ssl_web_stream_ = std::make_unique<beast::ssl_stream<beast::tcp_stream>>(
       io_context_, ssl_ctx_);
   beast::get_lowest_layer(*ssl_web_stream_)
@@ -65,6 +73,10 @@ void tg_message_sender_t::perform_ssl_handshake() {
 }
 
 void tg_message_sender_t::prepare_payload() {
+  if (http_request_.has_value()) {
+    return;
+  }
+
   using http::field;
   using http::verb;
   auto payload = payloads_.front();
@@ -73,7 +85,7 @@ void tg_message_sender_t::prepare_payload() {
                       "/sendMessage?chat_id=" + payload.chat_id +
                       "&text=" + payload.text;
 
-  http_request_ = std::make_unique<http::request<http::string_body>>();
+  http_request_.emplace();
   http_request_->method(verb::post);
   http_request_->target(target);
   http_request_->version(11);
@@ -93,8 +105,8 @@ void tg_message_sender_t::send_request() {
       [self = shared_from_this()](beast::error_code ec, std::size_t const) {
         self->http_request_.reset();
         if (ec) {
-          self->operation_completed_ = true;
-          return self->error_callback_(ec.message());
+          self->error_callback_(ec.message());
+          return self->reestablish_connection();
         }
         return self->receive_data();
       });
@@ -103,16 +115,17 @@ void tg_message_sender_t::send_request() {
 void tg_message_sender_t::receive_data() {
   beast::get_lowest_layer(*ssl_web_stream_)
       .expires_after(std::chrono::seconds(45));
-  http_response_ = std::make_unique<http::response<http::string_body>>();
+  http_response_.emplace();
   buffer_.emplace();
 
   http::async_read(
       *ssl_web_stream_, *buffer_, *http_response_,
       [self = shared_from_this()](beast::error_code ec, std::size_t const) {
-        if (ec) {
-          self->operation_completed_ = true;
-          return self->error_callback_(ec.message());
+        if (ec) { // if there was a timeout or some trivial error
+          self->error_callback_(ec.message());
+          return self->reestablish_connection();
         }
+        self->http_request_.reset();
         self->completion_callback_(self->http_response_->body());
         self->http_response_.reset();
         return self->send_next_request();

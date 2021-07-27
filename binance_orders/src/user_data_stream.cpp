@@ -8,6 +8,7 @@
 #include <boost/beast/http/write.hpp>
 
 namespace binance {
+
 using namespace fmt::v7::literals;
 
 char const *const user_data_stream_t::rest_api_host_ = "api.binance.com";
@@ -21,6 +22,17 @@ user_data_stream_t::user_data_stream_t(net::io_context &io_context,
                                        host_info_t &&host_info)
     : io_context_{io_context}, ssl_ctx_{ssl_ctx},
       ssl_web_stream_{}, resolver_{}, host_info_{std::move(host_info)} {}
+
+user_data_stream_t::~user_data_stream_t() {
+  if (ssl_web_stream_.has_value()) {
+    ssl_web_stream_->close({});
+  }
+  buffer_.reset();
+  on_error_timer_.reset();
+  listen_key_timer_.reset();
+  ssl_web_stream_.reset();
+  listen_key_keepalive_.reset();
+}
 
 void user_data_stream_t::run() { rest_api_initiate_connection(); }
 
@@ -39,7 +51,8 @@ void user_data_stream_t::rest_api_initiate_connection() {
     return;
   }
 
-  periodic_timer_.reset();
+  listen_key_timer_.reset();
+  on_error_timer_.reset();
   resolver_.emplace(io_context_);
 
   resolver_->async_resolve(
@@ -254,9 +267,7 @@ void user_data_stream_t::ws_upgrade_to_websocket() {
       [self = shared_from_this()](auto const frame_type, auto const &) {
         if (frame_type == websock::frame_type::close) {
           if (!self->stopped_) {
-            self->ssl_web_stream_.reset();
-            // start afresh, get new listen key etc
-            return self->rest_api_initiate_connection();
+            return self->on_ws_connection_severed();
           }
         } else if (frame_type == websock::frame_type::pong) {
           spdlog::info("pong...");
@@ -270,7 +281,7 @@ void user_data_stream_t::ws_upgrade_to_websocket() {
           return spdlog::error(ec.message());
         }
 
-        if (!self->periodic_timer_) {
+        if (!self->listen_key_timer_) {
           self->activate_listen_key_keepalive();
         }
         self->ws_wait_for_messages();
@@ -284,7 +295,7 @@ void user_data_stream_t::ws_wait_for_messages() {
                                             std::size_t const) {
         if (error_code) {
           spdlog::error(error_code.message());
-          return self->rest_api_initiate_connection();
+          return self->on_ws_connection_severed();
         }
         self->ws_interpret_generic_messages();
       });
@@ -316,23 +327,43 @@ void user_data_stream_t::ws_interpret_generic_messages() {
 }
 
 void user_data_stream_t::on_periodic_time_timeout() {
-  periodic_timer_->expires_after(std::chrono::minutes(30));
-  periodic_timer_->async_wait([self = shared_from_this()](
-                                  boost::system::error_code const &ec) {
+  listen_key_timer_->expires_after(std::chrono::minutes(30));
+  listen_key_timer_->async_wait([self = shared_from_this()](
+                                    boost::system::error_code const &ec) {
     if (ec || !self->ssl_web_stream_.has_value()) {
       return;
     }
-    self->listen_key_keepalive_ = std::make_shared<listen_key_keepalive_t>(
+    self->listen_key_keepalive_ = std::make_unique<listen_key_keepalive_t>(
         self->io_context_, self->ssl_ctx_, *self->listen_key_,
         self->host_info_->api_key);
     self->listen_key_keepalive_->run();
-    self->periodic_timer_->cancel();
+    self->listen_key_timer_->cancel();
     net::post(self->io_context_, [self] { self->on_periodic_time_timeout(); });
   });
 }
 
+void user_data_stream_t::on_ws_connection_severed() {
+  if (ssl_web_stream_.has_value()) {
+    ssl_web_stream_->close({});
+    ssl_web_stream_.reset();
+  }
+  listen_key_.reset();
+  listen_key_timer_.reset();
+  listen_key_keepalive_.reset();
+  buffer_.reset();
+
+  auto &timer = on_error_timer_.emplace(io_context_);
+  timer.expires_after(std::chrono::seconds(10));
+  timer.async_wait([self = shared_from_this()](auto const &ec) {
+    if (ec) {
+      return spdlog::error(ec.message());
+    }
+    self->rest_api_initiate_connection();
+  });
+}
+
 void user_data_stream_t::activate_listen_key_keepalive() {
-  periodic_timer_.emplace(io_context_);
+  listen_key_timer_.emplace(io_context_);
   on_periodic_time_timeout();
 }
 
@@ -446,4 +477,5 @@ void user_data_stream_t::ws_process_account_position(
   auto &streams_container = request_handler_t::get_stream_container();
   streams_container.append_list(std::move(updates));
 }
+
 } // namespace binance
