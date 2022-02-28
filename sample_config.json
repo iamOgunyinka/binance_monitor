@@ -1,0 +1,24 @@
+{
+  "database": [
+    {
+      "type": "production",
+      "data": {
+        "username": "my_user",
+        "password": "my_pass",
+        "db_dns": "my_dbnsw"
+      }
+    },
+    {
+      "type": "development",
+      "data": {
+        "username": "my_user2",
+        "password": "12345678",
+        "db_dns": "example"
+      }
+    }
+  ],
+  "client_version": 110,
+  "server_version": 110,
+  "jwt": "my_safe_jwt",
+  "bot_token": "TG_bot:token"
+}
