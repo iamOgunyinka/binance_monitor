@@ -14,5 +14,5 @@ The aim of this project is to make a programmable system where you can schedule 
 
 It's a work in progress and the actual grammar for the _language_ has not been ironed out at the moment.
 
-## setup
-The `command.sh` file will give you an **idea** of how to install the _binance_orders_ project on any Linux distribution.
+## Installation
+Running the `command.sh` file on any Ubuntu linux distro will download the necessary libraries and install the services. Please check the commands to see what and what do not need to be adjusted before running it.
