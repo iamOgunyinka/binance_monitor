@@ -8,13 +8,13 @@ wget "https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_7
 tar -xzvf boost_1_76_0.tar.gz*
 
 #export Boost
-CURR_WD=$PWD
-export BOOST_ROOT=$CURR_WD/boost_1_76_0/
+export BOOST_ROOT=$PWD/boost_1_76_0/
 
 #clone git and cd into it...
 git clone "https://github.com/iamOgunyinka/binance_monitor.git"
+ROOT_DIR=$PWD/binance_monitor
 
-cd $PWD/binance_monitor/
+cd $ROOT_DIR
 
 # unzip and enter the server files
 mkdir server_files
@@ -29,26 +29,37 @@ sudo cp *.ini /etc/
 sudo cp supervisord.conf /etc/supervisor/
 sudo cp nginx.conf /etc/nginx/
 
-cd ../binance_orders/
+cd $ROOT_DIR/binance_orders/
 git submodule update --init --recursive
 
 # cd into each program and compile them
 cmake . && make
 
-cd ../binance_prices/
+cd $ROOT_DIR/binance_prices/
 git submodule update --init --recursive
 cmake . && make
 
-cd $CURR_WD/binance_monitors/
+cd $ROOT_DIR
 mkdir log
-mkdir config
 mkdir log/prices log/orders
-touch config/info.json
 
+echo "*******************************************************"
+echo "The 'config/info.json' file is just a sample config"
+echo file and you will need to edit it for more flexibility.
+echo "*******************************************************"
+
+# use a sample configuration file
+mkdir config
+mv $ROOT_DIR/sample_config.json $ROOT_DIR/config/info.json
+
+# start the reverse proxy server
 service nginx start
 
 echo =======================================================
-echo "You'll need to edit the /etc/supervisor/supervisor.conf"
-echo file to point to the location of the new executables and
-echo "then run 'service supervisor start' to run the servers."
+echo If starting supervisor fails, you may need to edit the
+echo "'/etc/supervisor/supervisor.conf' file to point to the"
+echo location of the new executables and then run
+echo "'service supervisor start' to run the services."
 echo =======================================================
+
+service supervisor start
