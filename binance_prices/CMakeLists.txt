@@ -10,7 +10,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.76.0 COMPONENTS)
 
 if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS}) 
+    include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
 ###########################
@@ -20,14 +20,11 @@ set(CMAKE_BUILD_TYPE Release)
 include_directories(${PROJECT_DIR}/include)
 include_directories(${PROJECT_DIR}/../third-party)
 include_directories(${PROJECT_DIR}/../)
-include_directories(${PROJECT_DIR}/../third-party/CLI11/include)
 include_directories(${PROJECT_DIR}/../third-party/json/single_include)
 include_directories(${PROJECT_DIR}/../third-party/spdlog/include)
-include_directories(${PROJECT_DIR}/../third-party/miniz-cpp)
-include_directories(${PROJECT_DIR}/../third-party/cpp-jwt/include)
 
 link_directories(/usr/lib)
-link_libraries(pthread ssl crypto odbc z stdc++fs)
+link_libraries(pthread ssl crypto stdc++fs)
 
 # Outputs
 set(OUTPUT_DEBUG ${PROJECT_DIR}/bin)
@@ -68,11 +65,7 @@ message("${PROJECT_NAME}: CURR BIN DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 set(SRC_FILES
   ../common/crypto.cpp
   ../common/json_utils.cpp
-  ./src/database_connector.cpp
   ./src/request_handler.cpp
-  ./src/server.cpp
-  ./src/session.cpp
-  ./src/ticking_timer.cpp
   ./src/websock_launcher.cpp
   ./main.cpp
   ./src/market_data_stream.cpp
@@ -85,16 +78,10 @@ set(HEADERS_FILES
   ../common/containers.hpp
   ../common/crypto.hpp
   ../common/json_utils.hpp
-  ./include/database_connector.hpp
   ./include/fields_alloc.hpp
-  ./include/host_info.hpp
   ./include/orders_info.hpp
   ./include/market_data_stream.hpp
   ./include/request_handler.hpp
-  ./include/server.hpp
-  ./include/session.hpp
-  ./include/ticking_timer.hpp
-  ../third-party/otlv4.h
   ./include/subscription_data.hpp
   ./include/websock_launcher.hpp
 )
@@ -102,7 +89,7 @@ set(HEADERS_FILES
 source_group("Headers" FILES ${HEADERS_FILES})
 
 # Add executable to build.
-add_executable(${PROJECT_NAME} 
+add_executable(${PROJECT_NAME}
    ${SRC_FILES} ${HEADERS_FILES}
 )
 
@@ -115,9 +102,9 @@ endif(NOT MSVC)
 
 # Preprocessor definitions
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE 
-   -D_DEBUG 
-   -D_CONSOLE 
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+   -D_DEBUG
+   -D_CONSOLE
     )
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /MD /Od /Zi /EHsc /std:c++17)
@@ -125,9 +112,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE 
-   -DNDEBUG 
-   -D_CONSOLE 
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+   -DNDEBUG
+   -D_CONSOLE
     )
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /GL /Oi /Gy /Zi /EHsc /std:c++17)

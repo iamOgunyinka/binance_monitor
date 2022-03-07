@@ -118,13 +118,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Visual Studio Projects\binance\third-party\cpp-jwt\include;D:\Visual Studio Projects\binance\third-party\miniz-cpp;D:\Visual Studio Projects\binance\third-party\json\single_include;D:\Visual Studio Projects\binance\binance_prices\include;D:\Visual Studio Projects\binance\third-party;D:\Visual Studio Projects\binance\third-party\spdlog\include;D:\Visual Studio Projects\binance\third-party\CLI11\include;D:\vcpkg\installed\x64-windows\include;D:\boost_1_75\include;D:\Visual Studio Projects\binance;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Visual Studio Projects\binance\third-party\cpp-jwt\include;D:\Visual Studio Projects\binance\third-party\miniz-cpp;D:\Visual Studio Projects\binance\third-party\json\single_include;D:\Visual Studio Projects\binance\binance_prices\include;D:\Visual Studio Projects\binance\third-party;D:\Visual Studio Projects\binance\third-party\spdlog\include;D:\Visual Studio Projects\binance\third-party\CLI11\include;D:\vcpkg\installed\x64-windows\include;D:\boost_1_78\include;D:\Visual Studio Projects\binance;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\OpenXLSX\output\lib;D:\boost_1_75\lib;D:\vcpkg\installed\x64-windows\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\boost_1_78\lib;D:\vcpkg\installed\x64-windows\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -148,28 +148,19 @@
     <ClCompile Include="..\common\crypto.cpp" />
     <ClCompile Include="..\common\json_utils.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\database_connector.cpp" />
     <ClCompile Include="src\market_data_stream.cpp" />
     <ClCompile Include="src\request_handler.cpp" />
-    <ClCompile Include="src\server.cpp" />
-    <ClCompile Include="src\session.cpp" />
-    <ClCompile Include="src\ticking_timer.cpp" />
     <ClCompile Include="src\websock_launcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\containers.hpp" />
     <ClInclude Include="..\common\crypto.hpp" />
     <ClInclude Include="..\common\json_utils.hpp" />
-    <ClInclude Include="include\database_connector.hpp" />
     <ClInclude Include="include\fields_alloc.hpp" />
-    <ClInclude Include="include\host_info.hpp" />
     <ClInclude Include="include\orders_info.hpp" />
     <ClInclude Include="include\market_data_stream.hpp" />
     <ClInclude Include="include\request_handler.hpp" />
-    <ClInclude Include="include\server.hpp" />
-    <ClInclude Include="include\session.hpp" />
     <ClInclude Include="include\subscription_data.hpp" />
-    <ClInclude Include="include\ticking_timer.hpp" />
     <ClInclude Include="include\websock_launcher.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

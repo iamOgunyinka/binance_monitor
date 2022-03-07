@@ -1,15 +1,8 @@
 #pragma once
 
-#include <optional>
 #include <string>
 
 namespace binance {
-
-struct user_result_request_t {
-  std::string account_alias{};
-  std::optional<std::string> start_date{};
-  std::optional<std::string> end_date{};
-};
 
 struct instrument_type_t {
   std::string instrument_id{};
